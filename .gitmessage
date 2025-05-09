@@ -1,0 +1,26 @@
+# <type>: <subject>
+# |<---- Using a maximum of 50 characters ---->|
+#
+# <body>
+# |<---- Using a maximum of 72 characters ---->|
+#
+# <footer>
+#
+# Type can be:
+#    feat     (new feature)
+#    fix      (bug fix)
+#    refactor (refactoring code)
+#    style    (formatting, missing semi colons, etc; no code change)
+#    doc      (changes to documentation)
+#    test     (adding or refactoring tests; no production code change)
+#    chore    (updating build tasks, package configs, etc; no production code change)
+#
+# Subject should use imperative tone and not end with a period
+# Example: feat: add payment method validation
+#
+# The body should include the motivation for the change and contrast with previous behavior
+#
+# The footer should contain any information about Breaking Changes and reference GitHub issues
+# Example: Closes #123, #245, #992
+#
+# BREAKING CHANGE: <description of the breaking change>
