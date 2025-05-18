@@ -1,0 +1,73 @@
+@startuml Notification Domain
+' Notification Domain Entity-Relationship Diagram for E-commerce Platform
+
+title Notification Domain - Data Model
+
+entity "Notification" as notification {
+  * id : UUID
+  * user_id : UUID
+  * type : enum (EMAIL, SMS, PUSH, IN_APP)
+  * template_id : UUID
+  * status : enum (PENDING, SENT, FAILED, DELIVERED, READ)
+  * subject : string
+  * content : text
+  * metadata : json
+  * created_at : datetime
+  * updated_at : datetime
+  * sent_at : datetime
+  * delivered_at : datetime
+  * read_at : datetime
+}
+
+entity "NotificationTemplate" as template {
+  * id : UUID
+  * name : string
+  * description : text
+  * type : enum (EMAIL, SMS, PUSH, IN_APP)
+  * event_type : string
+  * subject_template : string
+  * content_template : text
+  * is_active : boolean
+  * created_at : datetime
+  * updated_at : datetime
+}
+
+entity "NotificationPreference" as preference {
+  * id : UUID
+  * user_id : UUID
+  * event_type : string
+  * channel_email : boolean
+  * channel_sms : boolean
+  * channel_push : boolean
+  * channel_in_app : boolean
+  * created_at : datetime
+  * updated_at : datetime
+}
+
+entity "NotificationEvent" as event {
+  * id : UUID
+  * event_type : string
+  * source_type : string
+  * source_id : UUID
+  * data : json
+  * created_at : datetime
+}
+
+entity "NotificationDeliveryAttempt" as attempt {
+  * id : UUID
+  * notification_id : UUID
+  * provider : string
+  * status : enum (PENDING, SUCCESS, FAILED)
+  * provider_response : json
+  * error_message : text
+  * attempt_number : int
+  * created_at : datetime
+}
+
+' Relationships
+template ||--o{ notification : uses
+notification ||--o{ attempt : has
+event ||--o{ notification : triggers
+preference }|--|| notification : controls
+
+@enduml

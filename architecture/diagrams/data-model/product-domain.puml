@@ -1,0 +1,157 @@
+@startuml Product Domain
+' Product Domain Entity-Relationship Diagram for E-commerce Platform
+
+title Product Domain - Data Model
+
+entity "Category" as category {
+  * id : UUID
+  * name : string
+  * slug : string
+  * description : text
+  * parent_id : UUID
+  * level : int
+  * path : string
+  * is_active : boolean
+  * meta_title : string
+  * meta_description : string
+  * meta_keywords : string
+  * created_at : datetime
+  * updated_at : datetime
+}
+
+entity "Product" as product {
+  * id : UUID
+  * name : string
+  * slug : string
+  * description : text
+  * short_description : text
+  * price : decimal
+  * status : enum (DRAFT, ACTIVE, INACTIVE, ARCHIVED)
+  * type : enum (SIMPLE, VARIABLE, DIGITAL, BUNDLE)
+  * weight : decimal
+  * dimensions_length : decimal
+  * dimensions_width : decimal
+  * dimensions_height : decimal
+  * meta_title : string
+  * meta_description : string
+  * meta_keywords : string
+  * created_at : datetime
+  * updated_at : datetime
+}
+
+entity "ProductCategory" as product_category {
+  * id : UUID
+  * product_id : UUID
+  * category_id : UUID
+  * is_primary : boolean
+}
+
+entity "ProductVariant" as variant {
+  * id : UUID
+  * product_id : UUID
+  * sku : string
+  * price : decimal
+  * sale_price : decimal
+  * cost_price : decimal
+  * weight : decimal
+  * dimensions_length : decimal
+  * dimensions_width : decimal
+  * dimensions_height : decimal
+  * is_default : boolean
+  * is_active : boolean
+  * created_at : datetime
+  * updated_at : datetime
+}
+
+entity "ProductAttribute" as attribute {
+  * id : UUID
+  * name : string
+  * code : string
+  * type : enum (TEXT, NUMBER, BOOLEAN, SELECT, MULTI_SELECT)
+  * is_filterable : boolean
+  * is_searchable : boolean
+  * is_required : boolean
+  * display_order : int
+  * created_at : datetime
+  * updated_at : datetime
+}
+
+entity "ProductAttributeOption" as attribute_option {
+  * id : UUID
+  * attribute_id : UUID
+  * value : string
+  * display_order : int
+}
+
+entity "ProductAttributeValue" as attr_value {
+  * id : UUID
+  * product_id : UUID
+  * variant_id : UUID
+  * attribute_id : UUID
+  * attribute_option_id : UUID
+  * value : string
+  * created_at : datetime
+  * updated_at : datetime
+}
+
+entity "ProductImage" as image {
+  * id : UUID
+  * product_id : UUID
+  * variant_id : UUID
+  * url : string
+  * alt_text : string
+  * sort_order : int
+  * is_thumbnail : boolean
+  * created_at : datetime
+  * updated_at : datetime
+}
+
+entity "ProductReview" as review {
+  * id : UUID
+  * product_id : UUID
+  * user_id : UUID
+  * rating : int
+  * title : string
+  * content : text
+  * status : enum (PENDING, APPROVED, REJECTED, SPAM)
+  * created_at : datetime
+  * updated_at : datetime
+}
+
+entity "ProductTag" as tag {
+  * id : UUID
+  * name : string
+  * slug : string
+}
+
+entity "ProductTagMapping" as tag_mapping {
+  * id : UUID
+  * product_id : UUID
+  * tag_id : UUID
+}
+
+entity "RelatedProduct" as related_product {
+  * id : UUID
+  * product_id : UUID
+  * related_product_id : UUID
+  * relationship_type : enum (RELATED, UPSELL, CROSS_SELL)
+  * sort_order : int
+}
+
+' Relationships
+category ||--o{ category : has_subcategory
+category ||--o{ product_category : has
+product ||--o{ product_category : belongs_to
+product ||--o{ variant : has
+product ||--o{ image : has
+product ||--o{ review : has
+product ||--o{ attr_value : has_global
+product ||--o{ tag_mapping : has
+product ||--o{ related_product : has
+variant ||--o{ attr_value : has_specific
+variant ||--o{ image : has
+attribute ||--o{ attribute_option : has
+attribute ||--o{ attr_value : defines
+tag ||--o{ tag_mapping : assigned_to
+
+@enduml

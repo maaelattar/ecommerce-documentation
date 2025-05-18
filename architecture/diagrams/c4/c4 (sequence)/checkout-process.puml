@@ -1,0 +1,88 @@
+@startuml
+!theme plain
+scale max 1200 width
+skinparam dpi 300
+skinparam maxMessageSize 250
+skinparam responseMessageBelowArrow true
+skinparam SequenceMessageAlignment center
+skinparam SequenceGroupBodyBackgroundColor transparent
+skinparam SequenceDividerBackgroundColor WhiteSmoke
+skinparam SequenceReferenceBackgroundColor WhiteSmoke
+skinparam SequenceBoxBackgroundColor WhiteSmoke
+skinparam SequenceLifeLineBorderColor Grey
+skinparam SequenceArrowColor Black
+skinparam SequenceParticipantBackgroundColor WhiteSmoke
+skinparam SequenceActorBackgroundColor WhiteSmoke
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+skinparam Padding 2
+skinparam SequenceDividerFontStyle bold
+skinparam SequenceReferenceFontStyle bold
+skinparam SequenceBoxFontStyle bold
+skinparam PageMargin 10
+skinparam PageExternalColor White
+skinparam PageBorderColor White
+
+' Checkout Process Sequence Diagram
+title Checkout Process
+
+actor "Customer" as customer
+participant "Web App" as webapp
+participant "API Gateway" as gateway
+participant "Order Service\n(Cart Component)" as cartsvc
+participant "Order Service\n(Order Component)" as ordersvc
+participant "Product Service\n(Inventory Component)" as inventorysvc
+participant "Payment Service" as paymentsvc
+participant "Payment Gateway" as paymentgw
+participant "Message Broker\n(RabbitMQ)" as broker
+participant "Notification Service" as notificationsvc
+participant "Email Service" as emailsvc
+
+box "Phase 1: Cart Management" #LightBlue
+customer -> webapp: Add product to cart
+webapp -> gateway: POST /api/v1/cart/items
+gateway -> cartsvc: Forward request
+cartsvc -> inventorysvc: Check product availability
+inventorysvc --> cartsvc: Availability confirmed
+cartsvc --> gateway: Return updated cart
+gateway --> webapp: Return updated cart
+webapp --> customer: Display updated cart
+end box
+
+box "Phase 2: Checkout Initiation" #LightGreen
+customer -> webapp: Proceed to checkout
+webapp -> gateway: GET /api/v1/checkout/init
+gateway -> ordersvc: Initialize checkout
+ordersvc -> cartsvc: Retrieve cart details
+cartsvc --> ordersvc: Return cart items, totals
+ordersvc -> inventorysvc: Validate all items available
+inventorysvc --> ordersvc: Availability confirmed
+ordersvc --> gateway: Return checkout session
+gateway --> webapp: Return checkout session
+webapp --> customer: Display checkout form
+end box
+
+box "Phase 3: Order Placement & Payment" #LightYellow
+customer -> webapp: Submit order with payment info
+webapp -> gateway: POST /api/v1/orders
+gateway -> ordersvc: Create order
+ordersvc -> cartsvc: Lock cart items
+cartsvc --> ordersvc: Cart locked
+ordersvc -> paymentsvc: Request payment processing
+paymentsvc -> paymentgw: Process payment
+paymentgw --> paymentsvc: Payment authorized
+paymentsvc --> ordersvc: Payment confirmation
+ordersvc -> inventorysvc: Reserve inventory
+inventorysvc --> ordersvc: Inventory reserved
+ordersvc -> ordersvc: Update order status to PAID
+ordersvc -> broker: Publish OrderCreated event
+broker -> notificationsvc: OrderCreated event
+notificationsvc -> emailsvc: Send order confirmation email
+emailsvc --> notificationsvc: Email sent confirmation
+ordersvc --> gateway: Return order details
+gateway --> webapp: Return order details
+webapp --> customer: Display order confirmation
+end box
+
+note over customer, emailsvc: Async email delivery occurs after response
+@enduml

@@ -1,0 +1,91 @@
+@startuml order-state
+' Fix for clipping issues with comprehensive diagrams
+!pragma layout smetana
+' Using lower DPI will help prevent clipping
+skinparam dpi 150
+' Set page dimensions explicitly
+skinparam pageMargin 10
+skinparam pageExternalColor white
+' Use a scale factor that prevents clipping but keeps detail
+scale max 2000 width
+
+' Basic styling
+skinparam StateFontSize 14
+skinparam StateFontStyle bold
+skinparam StateBackgroundColor WhiteSmoke
+skinparam StateAttributeFontSize 12
+skinparam ArrowFontSize 12
+skinparam ArrowColor #444444
+skinparam shadowing false
+
+title Order State Diagram
+
+[*] --> CART : Add first item to cart
+
+state CART {
+    [*] --> ACTIVE
+    ACTIVE --> ABANDONED : No activity for 24+ hours
+    ABANDONED --> ACTIVE : User returns to cart
+    ACTIVE --> EXPIRED : Cart expires after 30 days
+    ACTIVE : Items can be added/removed
+    ACTIVE : Prices may change
+}
+
+CART --> CHECKOUT : User begins checkout
+CHECKOUT --> CART : Return to cart
+
+state CHECKOUT {
+    [*] --> ADDRESS_ENTRY
+    ADDRESS_ENTRY --> SHIPPING_METHOD
+    SHIPPING_METHOD --> PAYMENT
+    PAYMENT --> REVIEW
+    REVIEW --> PAYMENT : Edit payment
+    REVIEW --> SHIPPING_METHOD : Edit shipping
+    REVIEW --> ADDRESS_ENTRY : Edit address
+}
+
+CHECKOUT --> CART : Abandon checkout
+CHECKOUT --> PLACED : Submit order
+
+state PLACED {
+    [*] --> PENDING_PAYMENT
+    PENDING_PAYMENT --> PAYMENT_FAILED : Payment rejected
+    PENDING_PAYMENT --> PAYMENT_RECEIVED : Payment successful
+    PAYMENT_FAILED --> CANCELED : Cancel after max retries
+    PAYMENT_FAILED --> PENDING_PAYMENT : Retry payment
+    PAYMENT_RECEIVED --> PROCESSING
+    PROCESSING --> FRAUD_REVIEW : Flagged by fraud detection
+    FRAUD_REVIEW --> CANCELED : Fail fraud check
+    FRAUD_REVIEW --> PROCESSING : Pass fraud check
+    PROCESSING --> READY_TO_SHIP
+}
+
+PLACED --> SHIPPED : Order shipped
+
+state SHIPPED {
+    [*] --> IN_TRANSIT
+    IN_TRANSIT --> DELIVERED : Package delivered
+    IN_TRANSIT --> EXCEPTION : Delivery issue
+    EXCEPTION --> IN_TRANSIT : Issue resolved
+    EXCEPTION --> RETURNED_TO_SENDER : Unresolvable issue
+}
+
+SHIPPED --> COMPLETED : Order received & acceptance period ended
+SHIPPED --> RETURN_REQUESTED : Customer requests return
+
+state RETURN_REQUESTED {
+    [*] --> RETURN_LABEL_GENERATED
+    RETURN_LABEL_GENERATED --> RETURN_IN_TRANSIT
+    RETURN_IN_TRANSIT --> RETURN_RECEIVED
+    RETURN_RECEIVED --> RETURN_INSPECTED
+    RETURN_INSPECTED --> RETURN_APPROVED
+    RETURN_INSPECTED --> RETURN_REJECTED
+    RETURN_APPROVED --> REFUND_PROCESSED
+    RETURN_REJECTED --> RETURN_SHIPPED_BACK : Return item back to customer
+}
+
+RETURN_REQUESTED --> COMPLETED : Return process finished
+COMPLETED --> [*]
+CANCELED --> [*]
+
+@enduml

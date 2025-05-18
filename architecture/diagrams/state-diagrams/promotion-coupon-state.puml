@@ -1,0 +1,113 @@
+@startuml promotion-coupon-state
+' Fix for clipping issues with comprehensive diagrams
+!pragma layout smetana
+' Using lower DPI will help prevent clipping
+skinparam dpi 150
+' Set page dimensions explicitly
+skinparam pageMargin 10
+skinparam pageExternalColor white
+' Use a scale factor that prevents clipping but keeps detail
+scale max 2000 width
+
+' Basic styling
+skinparam StateFontSize 14
+skinparam StateFontStyle bold
+skinparam StateBackgroundColor WhiteSmoke
+skinparam StateAttributeFontSize 12
+skinparam ArrowFontSize 12
+skinparam ArrowColor #444444
+skinparam shadowing false
+
+title Promotion/Coupon State Diagram
+
+[*] --> CREATED : Marketing creates promotion
+
+state CREATED {
+    [*] --> DRAFT
+    DRAFT --> CONFIGURED : Basic setup completed
+    
+    state CONFIGURED {
+        [*] --> DISCOUNT_SET 
+        DISCOUNT_SET --> RULES_DEFINED : Eligibility rules added
+        RULES_DEFINED --> LIMITS_SET : Usage limits configured
+        LIMITS_SET --> SCHEDULE_SET : Time period defined
+        
+        DISCOUNT_SET : Discount amount/percentage defined
+        RULES_DEFINED : Product/customer eligibility
+        LIMITS_SET : Usage count, minimum purchase
+        SCHEDULE_SET : Start/end dates set
+    }
+}
+
+CREATED --> PENDING_APPROVAL : Ready for review
+
+state PENDING_APPROVAL {
+    [*] --> UNDER_REVIEW
+    UNDER_REVIEW --> APPROVED : Passes review
+    UNDER_REVIEW --> REJECTED : Fails review
+    REJECTED --> CREATED : Return for edits
+}
+
+PENDING_APPROVAL --> SCHEDULED : Approved but not yet active
+
+state SCHEDULED {
+    [*] --> WAITING_START_DATE
+    WAITING_START_DATE --> COUNTDOWN : Near activation
+    COUNTDOWN : Promotion about to go live
+}
+
+SCHEDULED --> ACTIVE : Start date/time reached
+
+state ACTIVE {
+    [*] --> VISIBLE
+    [*] --> HIDDEN
+    
+    VISIBLE : Publicly viewable promotion
+    HIDDEN : Secret/code-only promotion
+    
+    VISIBLE --> VISIBLE_UNUSED : Available but not used
+    HIDDEN --> HIDDEN_UNUSED : Available but not used
+    
+    VISIBLE_UNUSED --> VISIBLE_USED : Customer uses promotion
+    HIDDEN_UNUSED --> HIDDEN_USED : Customer uses promotion
+    
+    VISIBLE_USED : Tracked for analytics
+    HIDDEN_USED : Tracked for analytics
+}
+
+ACTIVE --> USAGE_LIMIT_REACHED : Maximum redemptions hit
+
+state USAGE_LIMIT_REACHED {
+    [*] --> PARTIALLY_AVAILABLE
+    [*] --> FULLY_EXHAUSTED
+    
+    PARTIALLY_AVAILABLE : Limit per customer reached
+    FULLY_EXHAUSTED : Total usage limit reached
+}
+
+ACTIVE --> PAUSED : Temporarily deactivated
+
+state PAUSED {
+    [*] --> MANUAL_PAUSE
+    [*] --> AUTOMATIC_PAUSE
+    
+    MANUAL_PAUSE : Admin paused promotion
+    AUTOMATIC_PAUSE : System paused (inventory issues)
+}
+
+PAUSED --> ACTIVE : Reactivated
+ACTIVE --> EXPIRED : End date/time reached
+
+state EXPIRED {
+    [*] --> GRACE_PERIOD
+    GRACE_PERIOD --> FULLY_EXPIRED : Grace period ends
+    
+    GRACE_PERIOD : Honor existing cart codes
+    FULLY_EXPIRED : Reject all new uses
+}
+
+EXPIRED --> ARCHIVED : Moved to historical data
+ARCHIVED --> [*]
+USAGE_LIMIT_REACHED --> ARCHIVED : Promotion complete
+
+@enduml

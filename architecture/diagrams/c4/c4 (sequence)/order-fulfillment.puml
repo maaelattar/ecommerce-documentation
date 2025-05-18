@@ -1,0 +1,102 @@
+@startuml
+!theme plain
+scale max 1200 width
+skinparam dpi 300
+skinparam maxMessageSize 250
+skinparam responseMessageBelowArrow true
+skinparam SequenceMessageAlignment center
+skinparam SequenceGroupBodyBackgroundColor transparent
+skinparam SequenceDividerBackgroundColor WhiteSmoke
+skinparam SequenceReferenceBackgroundColor WhiteSmoke
+skinparam SequenceBoxBackgroundColor WhiteSmoke
+skinparam SequenceLifeLineBorderColor Grey
+skinparam SequenceArrowColor Black
+skinparam SequenceParticipantBackgroundColor WhiteSmoke
+skinparam SequenceActorBackgroundColor WhiteSmoke
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+skinparam Padding 2
+skinparam SequenceDividerFontStyle bold
+skinparam SequenceReferenceFontStyle bold
+skinparam SequenceBoxFontStyle bold
+skinparam PageMargin 10
+skinparam PageExternalColor White
+skinparam PageBorderColor White
+
+' Order Fulfillment Sequence Diagram
+title Order Fulfillment Process
+
+participant "Message Broker\n(RabbitMQ)" as broker
+participant "Order Service" as ordersvc
+participant "Product Service\n(Inventory Component)" as inventorysvc
+actor "Administrator" as admin
+participant "Admin Web App" as adminapp
+participant "API Gateway" as gateway
+participant "Shipping Service" as shippingsvc
+participant "Shipping Provider API" as shippingapi
+participant "Notification Service" as notificationsvc
+participant "Email Service" as emailsvc
+actor "Customer" as customer
+
+box "Phase 1: Order Ready for Fulfillment" #LightBlue
+broker -> ordersvc: OrderPaid event (from checkout flow)
+ordersvc -> ordersvc: Update order status to PROCESSING
+ordersvc -> broker: Publish OrderProcessing event
+
+broker -> inventorysvc: OrderProcessing event
+inventorysvc -> inventorysvc: Commit inventory reduction
+inventorysvc --> broker: InventoryUpdated event
+
+broker -> notificationsvc: OrderProcessing event
+notificationsvc -> emailsvc: Send order processing notification
+emailsvc --> customer: Order processing email
+end box
+
+box "Phase 2: Order Preparation & Shipping" #LightGreen
+admin -> adminapp: Access order for fulfillment
+adminapp -> gateway: GET /api/v1/admin/orders/{id}
+gateway -> ordersvc: Retrieve order details
+ordersvc --> gateway: Return order details
+gateway --> adminapp: Display order details
+adminapp --> admin: Show order ready for fulfillment
+
+admin -> adminapp: Mark order items packed
+adminapp -> gateway: PATCH /api/v1/admin/orders/{id}/status
+gateway -> ordersvc: Update order status to PACKED
+ordersvc --> gateway: Confirm status update
+gateway --> adminapp: Display updated status
+
+admin -> adminapp: Request shipping label
+adminapp -> gateway: POST /api/v1/admin/orders/{id}/shipping-label
+gateway -> shippingsvc: Generate shipping label request
+shippingsvc -> shippingapi: Request shipping label
+shippingapi --> shippingsvc: Return shipping label & tracking info
+shippingsvc -> ordersvc: Store shipping details with order
+shippingsvc --> gateway: Return shipping details
+gateway --> adminapp: Display shipping label
+adminapp --> admin: Print shipping label
+
+admin -> adminapp: Mark order shipped
+adminapp -> gateway: PATCH /api/v1/admin/orders/{id}/status
+gateway -> ordersvc: Update order status to SHIPPED
+ordersvc -> broker: Publish OrderShipped event
+ordersvc --> gateway: Confirm status update
+gateway --> adminapp: Display updated status
+end box
+
+box "Phase 3: Post-Shipment Notifications" #LightYellow
+broker -> notificationsvc: OrderShipped event
+notificationsvc -> emailsvc: Send shipping confirmation email
+emailsvc --> customer: Shipping confirmation with tracking
+end box
+
+box "Phase 4: Delivery Completion" #LightPink
+shippingapi -> shippingsvc: Delivery confirmation webhook
+shippingsvc -> ordersvc: Update order status to DELIVERED
+ordersvc -> broker: Publish OrderDelivered event
+
+broker -> notificationsvc: OrderDelivered event
+notificationsvc -> emailsvc: Send delivery confirmation email
+emailsvc --> customer: Delivery confirmation email
+end box
+@enduml

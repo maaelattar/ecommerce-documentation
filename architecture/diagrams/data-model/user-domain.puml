@@ -1,0 +1,93 @@
+@startuml User Domain
+' User Domain Entity-Relationship Diagram for E-commerce Platform
+
+title User Domain - Data Model
+
+entity "User" as user {
+  * id : UUID
+  * email : string
+  * password_hash : string
+  * name : string
+  * status : enum (ACTIVE, INACTIVE, LOCKED, PENDING)
+  * phone : string
+  * created_at : datetime
+  * updated_at : datetime
+  * last_login_at : datetime
+}
+
+entity "Address" as address {
+  * id : UUID
+  * user_id : UUID
+  * type : enum (SHIPPING, BILLING)
+  * first_name : string
+  * last_name : string
+  * company : string
+  * street_line1 : string
+  * street_line2 : string
+  * city : string
+  * state : string
+  * country : string
+  * postal_code : string
+  * phone : string
+  * is_default : boolean
+  * created_at : datetime
+  * updated_at : datetime
+}
+
+entity "UserPreference" as preference {
+  * id : UUID
+  * user_id : UUID
+  * preference_key : string
+  * preference_value : string
+  * created_at : datetime
+  * updated_at : datetime
+}
+
+entity "UserSession" as session {
+  * id : UUID
+  * user_id : UUID
+  * token : string
+  * ip_address : string
+  * user_agent : string
+  * expires_at : datetime
+  * created_at : datetime
+  * last_activity_at : datetime
+}
+
+entity "UserRole" as role {
+  * id : UUID
+  * name : string
+  * description : string
+}
+
+entity "UserRoleMapping" as role_mapping {
+  * id : UUID
+  * user_id : UUID
+  * role_id : UUID
+  * created_at : datetime
+}
+
+entity "Permission" as permission {
+  * id : UUID
+  * name : string
+  * description : string
+  * resource : string
+  * action : string
+}
+
+entity "RolePermission" as role_permission {
+  * id : UUID
+  * role_id : UUID
+  * permission_id : UUID
+}
+
+' Relationships
+user ||--o{ address : has
+user ||--o{ preference : has
+user ||--o{ session : has
+user ||--o{ role_mapping : has
+role ||--o{ role_mapping : assigned_to
+role ||--o{ role_permission : has
+permission ||--o{ role_permission : granted_to
+
+@enduml

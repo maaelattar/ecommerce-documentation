@@ -1,0 +1,102 @@
+@startuml shipping-delivery-state
+' Fix for clipping issues with comprehensive diagrams
+!pragma layout smetana
+' Using lower DPI will help prevent clipping
+skinparam dpi 150
+' Set page dimensions explicitly
+skinparam pageMargin 10
+skinparam pageExternalColor white
+' Use a scale factor that prevents clipping but keeps detail
+scale max 2000 width
+
+' Basic styling
+skinparam StateFontSize 14
+skinparam StateFontStyle bold
+skinparam StateBackgroundColor WhiteSmoke
+skinparam StateAttributeFontSize 12
+skinparam ArrowFontSize 12
+skinparam ArrowColor #444444
+skinparam shadowing false
+
+title Shipping/Delivery State Diagram
+
+[*] --> AWAITING_FULFILLMENT : Order payment confirmed
+
+state AWAITING_FULFILLMENT {
+    [*] --> PENDING_INVENTORY
+    PENDING_INVENTORY --> READY_FOR_PICKING : Inventory confirmed
+    READY_FOR_PICKING --> ITEMS_PICKED : Items collected from warehouse
+    ITEMS_PICKED --> PACKAGE_PREPARATION : Items ready for packaging
+    PACKAGE_PREPARATION --> PACKAGE_CREATED : Package assembled
+}
+
+AWAITING_FULFILLMENT --> FULFILLMENT_ISSUES : Inventory shortage detected
+
+state FULFILLMENT_ISSUES {
+    [*] --> PARTIAL_STOCK
+    [*] --> OUT_OF_STOCK
+    
+    PARTIAL_STOCK --> CUSTOMER_NOTIFIED : Alert about partial shipment
+    OUT_OF_STOCK --> CUSTOMER_NOTIFIED : Alert about backorder
+    CUSTOMER_NOTIFIED --> AWAITING_CUSTOMER_DECISION
+    AWAITING_CUSTOMER_DECISION --> CANCELLED : Customer cancels
+    AWAITING_CUSTOMER_DECISION --> BACKORDERED : Customer accepts delay
+    AWAITING_CUSTOMER_DECISION --> SUBSTITUTE_APPROVED : Customer accepts substitute
+    
+    BACKORDERED --> INVENTORY_RESTOCK_WAIT
+    INVENTORY_RESTOCK_WAIT --> AWAITING_FULFILLMENT : Items restocked
+}
+
+AWAITING_FULFILLMENT --> READY_FOR_SHIPPING : Package ready to ship
+READY_FOR_SHIPPING --> CARRIER_PICKUP_SCHEDULED : Shipping label created
+
+state CARRIER_PICKUP_SCHEDULED {
+    [*] --> AWAITING_PICKUP
+    AWAITING_PICKUP --> PICKED_UP : Carrier collects package
+}
+
+CARRIER_PICKUP_SCHEDULED --> IN_TRANSIT : Package with carrier
+
+state IN_TRANSIT {
+    [*] --> CARRIER_RECEIVED
+    CARRIER_RECEIVED --> REGIONAL_SORTING
+    REGIONAL_SORTING --> LOCAL_SORTING
+    LOCAL_SORTING --> OUT_FOR_DELIVERY
+    
+    CARRIER_RECEIVED : Package in carrier network
+    REGIONAL_SORTING : At regional distribution center
+    LOCAL_SORTING : At local distribution center
+    OUT_FOR_DELIVERY : On delivery vehicle
+}
+
+IN_TRANSIT --> DELIVERY_EXCEPTION : Delivery issue encountered
+
+state DELIVERY_EXCEPTION {
+    [*] --> DELIVERY_ATTEMPTED
+    [*] --> DELIVERY_DELAYED
+    [*] --> ADDRESS_ISSUE
+    [*] --> WEATHER_DELAY
+    
+    DELIVERY_ATTEMPTED --> SCHEDULED_REDELIVERY
+    ADDRESS_ISSUE --> ADDRESS_UPDATED
+    ADDRESS_UPDATED --> IN_TRANSIT : Updated address info
+    SCHEDULED_REDELIVERY --> IN_TRANSIT : New delivery attempt
+    WEATHER_DELAY --> IN_TRANSIT : Conditions improved
+}
+
+IN_TRANSIT --> DELIVERED : Package delivered to recipient
+
+state DELIVERED {
+    [*] --> RECIPIENT_RECEIVED
+    RECIPIENT_RECEIVED --> DELIVERY_CONFIRMED : Delivery confirmation
+    RECIPIENT_RECEIVED --> LEFT_AT_DOOR : No in-person delivery
+    LEFT_AT_DOOR --> DELIVERY_PHOTO_TAKEN : Photo evidence captured
+}
+
+DELIVERED --> COMPLETED : Delivery window completed
+DELIVERY_EXCEPTION --> RETURNED_TO_SENDER : Unresolvable delivery issue
+RETURNED_TO_SENDER --> [*]
+COMPLETED --> [*]
+CANCELLED --> [*]
+
+@enduml

@@ -1,0 +1,87 @@
+@startuml promotions-coupons-use-case
+' Fix for clipping issues with comprehensive diagrams
+skinparam Rankdir top-to-bottom
+skinparam dpi 150
+skinparam pageMargin 10
+skinparam pageExternalColor white
+scale max 2000 width
+
+' Basic styling
+skinparam ActorStyle awesome
+skinparam ArrowColor #444444
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam Handwritten false
+skinparam UsecaseBorderThickness 1
+skinparam UsecaseFontSize 12
+skinparam ActorFontSize 14
+
+title Promotions & Coupon Management Use Cases
+
+left to right direction
+
+actor "Administrator" as Admin
+actor "Customer" as Cust
+actor "System"
+
+rectangle "Promotions & Coupons System" {
+  ' Administrator Use Cases
+  usecase "Create New Promotion" as UC_CreatePromo
+  usecase "Define Promotion Rules" as UC_DefinePromoRules
+  usecase "Set Promotion Duration" as UC_SetPromoDuration
+  usecase "Generate Coupon Codes" as UC_GenCoupons
+  usecase "Distribute Coupon Codes" as UC_DistributeCoupons
+  usecase "Manage Existing Promotions" as UC_ManagePromos
+  usecase "View Promotion Performance" as UC_ViewPromoPerf
+  usecase "Deactivate Promotion" as UC_DeactivatePromo
+  usecase "Target Customer Segments" as UC_TargetSegments
+
+  ' Customer Use Cases
+  usecase "View Available Promotions" as UC_ViewAvailPromos
+  usecase "Receive Coupon Code" as UC_ReceiveCoupon
+  usecase "Enter Coupon Code at Checkout" as UC_EnterCoupon
+  usecase "Apply Promotion to Cart" as UC_ApplyPromoToCart
+  usecase "View Discount Applied" as UC_ViewDiscount
+
+  ' System Use Cases
+  usecase "Validate Coupon Code" as UC_ValidateCoupon
+  usecase "Apply Discount to Order" as UC_ApplyDiscount
+  usecase "Check Promotion Eligibility" as UC_CheckPromoEligibility
+  usecase "Track Coupon Usage" as UC_TrackCouponUsage
+  usecase "Expire Promotions/Coupons" as UC_ExpireItems
+  usecase "Notify Promotion Start/End" as UC_NotifyPromoLifecycle
+
+  ' --- Administrator to Use Case Relationships ---
+  Admin -- UC_CreatePromo
+  UC_CreatePromo .> UC_DefinePromoRules : <<include>>
+  UC_CreatePromo .> UC_SetPromoDuration : <<include>>
+  UC_CreatePromo .> UC_GenCoupons : <<extend>>
+  UC_CreatePromo .> UC_TargetSegments : <<extend>>
+  Admin -- UC_ManagePromos
+  UC_ManagePromos .> UC_DeactivatePromo : <<include>>
+  Admin -- UC_DistributeCoupons
+  Admin -- UC_ViewPromoPerf
+  
+  ' --- Customer to Use Case Relationships ---
+  Cust -- UC_ViewAvailPromos
+  Cust -- UC_ReceiveCoupon
+  Cust -- UC_EnterCoupon
+  UC_EnterCoupon .> UC_ValidateCoupon : <<include>>
+  Cust -- UC_ApplyPromoToCart
+  UC_ApplyPromoToCart .> UC_CheckPromoEligibility : <<include>>
+  Cust -- UC_ViewDiscount
+
+  ' --- System to Use Case Relationships ---
+  System -- UC_ValidateCoupon
+  UC_ValidateCoupon --> UC_ApplyDiscount : (Valid)
+  System -- UC_CheckPromoEligibility
+  UC_CheckPromoEligibility --> UC_ApplyDiscount : (Eligible)
+  System -- UC_TrackCouponUsage
+  UC_ApplyDiscount .> UC_TrackCouponUsage : <<include>>
+  System -- UC_ExpireItems
+  System -- UC_NotifyPromoLifecycle
+  UC_SetPromoDuration .> UC_NotifyPromoLifecycle : <<include>>
+  UC_DeactivatePromo .> UC_NotifyPromoLifecycle : <<include>>
+}
+
+@enduml

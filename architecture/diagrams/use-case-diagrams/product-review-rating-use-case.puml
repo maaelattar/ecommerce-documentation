@@ -1,0 +1,95 @@
+@startuml product-review-rating-use-case
+' Fix for clipping issues with comprehensive diagrams
+skinparam Rankdir top-to-bottom
+skinparam dpi 150
+skinparam pageMargin 10
+skinparam pageExternalColor white
+scale max 2000 width
+
+' Basic styling
+skinparam ActorStyle awesome
+skinparam ArrowColor #444444
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam Handwritten false
+skinparam UsecaseBorderThickness 1
+skinparam UsecaseFontSize 12
+skinparam ActorFontSize 14
+
+title Product Review & Rating Management Use Cases
+
+left to right direction
+
+actor "Registered Customer" as RegUser
+actor "Guest Customer" as GuestUser
+actor "Administrator" as Admin
+actor "System"
+
+rectangle "Review & Rating System" {
+  usecase "Submit Product Review" as UC_SubmitReview
+  usecase "Rate Product" as UC_RateProduct
+  usecase "Write Review Text" as UC_WriteText
+  usecase "Upload Media with Review" as UC_UploadMediaReview
+  note right of UC_UploadMediaReview: Optional feature
+  usecase "View Own Submitted Reviews" as UC_ViewMyReviews
+  usecase "Edit Own Review" as UC_EditMyReview
+  note right of UC_EditMyReview: If allowed
+  usecase "Delete Own Review" as UC_DeleteMyReview
+  note right of UC_DeleteMyReview: If allowed
+  
+  usecase "View Product Reviews" as UC_ViewProductReviews
+  note right of UC_ViewProductReviews: By any Customer
+  usecase "Sort Reviews" as UC_SortReviews
+  usecase "Filter Reviews" as UC_FilterReviews
+  usecase "Mark Review as Helpful" as UC_MarkHelpful
+  
+  usecase "Moderate Reviews" as UC_ModerateReviews #pink
+  note right of UC_ModerateReviews: Admin function
+  usecase "Approve Review" as UC_ApproveReview
+  usecase "Reject Review" as UC_RejectReview
+  usecase "Edit Review" as UC_EditReview_Admin #pink
+  note right of UC_EditReview_Admin: Admin function
+  usecase "Delete Review" as UC_DeleteReview_Admin #pink
+  note right of UC_DeleteReview_Admin: Admin function
+  usecase "Respond to Review" as UC_RespondToReview_Admin #pink
+  note right of UC_RespondToReview_Admin: Admin function
+  usecase "Manage Review Settings" as UC_ManageReviewSettings #pink
+  note right of UC_ManageReviewSettings: Admin function
+
+  ' --- Registered Customer to Use Case Relationships ---
+  RegUser -- UC_SubmitReview
+  UC_SubmitReview .> UC_RateProduct : <<include>>
+  UC_SubmitReview .> UC_WriteText : <<include>>
+  UC_SubmitReview .> UC_UploadMediaReview : <<extend>>
+  RegUser -- UC_ViewMyReviews
+  RegUser -- UC_EditMyReview
+  RegUser -- UC_DeleteMyReview
+  RegUser -- UC_MarkHelpful
+  RegUser -- UC_ViewProductReviews
+
+  ' --- Guest Customer to Use Case Relationships ---
+  GuestUser -- UC_ViewProductReviews
+  
+  
+
+  ' --- Administrator to Use Case Relationships ---
+  Admin -- UC_ModerateReviews
+  UC_ModerateReviews .> UC_ApproveReview : <<include>>
+  UC_ModerateReviews .> UC_RejectReview : <<include>>
+  UC_ModerateReviews .> UC_EditReview_Admin : <<extend>>
+  UC_ModerateReviews .> UC_DeleteReview_Admin : <<extend>>
+  Admin -- UC_RespondToReview_Admin
+  Admin -- UC_ManageReviewSettings
+
+  ' --- General Customer (Guest or Registered) ---
+  (UC_ViewProductReviews) .> UC_SortReviews : <<extend>>
+  (UC_ViewProductReviews) .> UC_FilterReviews : <<extend>>
+
+  ' --- System to Use Case Relationships ---
+  System -- UC_SubmitReview
+  System -- UC_ModerateReviews
+  System -- UC_ViewProductReviews
+
+}
+
+@enduml

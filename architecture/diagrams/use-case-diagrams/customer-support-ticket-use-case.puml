@@ -1,0 +1,110 @@
+@startuml customer-support-ticket-use-case
+' Fix for clipping issues with comprehensive diagrams
+skinparam Rankdir top-to-bottom
+skinparam dpi 150
+skinparam pageMargin 10
+skinparam pageExternalColor white
+scale max 2000 width
+
+' Basic styling
+skinparam ActorStyle awesome
+skinparam ArrowColor #444444
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam Handwritten false
+skinparam UsecaseBorderThickness 1
+skinparam UsecaseFontSize 12
+skinparam ActorFontSize 14
+
+title Customer Support Ticket Management Use Cases
+
+left to right direction
+
+actor "Customer" as Cust
+actor "Support Agent" as Agent
+actor "Administrator" as Admin
+actor "System"
+
+rectangle "Support Ticket System" {
+  ' Customer Use Cases
+  usecase "Submit New Support Ticket" as UC_SubmitTicket
+  usecase "Describe Issue" as UC_DescribeIssue
+  usecase "Select Issue Category" as UC_SelectCategory
+  usecase "Attach Files {{Optional}}" as UC_AttachFiles
+  usecase "View Own Tickets" as UC_ViewMyTickets
+  usecase "View Ticket Status" as UC_ViewTicketStatus
+  usecase "Add Comment to Ticket" as UC_AddComment_Cust
+  usecase "Reopen Closed Ticket" as UC_ReopenTicket_Cust
+  usecase "Close Ticket (Confirm Resolution)" as UC_CloseTicket_Cust
+  usecase "Rate Support Interaction (Optional)" as UC_RateSupport
+
+  ' Support Agent Use Cases
+  usecase "View Assigned Tickets" as UC_ViewAssignedTickets
+  usecase "View Unassigned Tickets Queue" as UC_ViewQueue
+  usecase "Assign Ticket to Self/Other" as UC_AssignTicket
+  usecase "Investigate Issue" as UC_InvestigateIssue
+  usecase "Add Internal Note" as UC_AddInternalNote
+  usecase "Add Comment/Reply to Customer" as UC_AddComment_Agent
+  usecase "Escalate Ticket" as UC_EscalateTicket
+  usecase "Change Ticket Status" as UC_ChangeStatus_Agent
+  usecase "Resolve Ticket" as UC_ResolveTicket_Agent
+  usecase "Close Ticket" as UC_CloseTicket_Agent
+  usecase "Search Knowledge Base" as UC_SearchKB
+  usecase "Merge Duplicate Tickets" as UC_MergeTickets
+
+  ' Administrator Use Cases
+  usecase "Manage Support Agents" as UC_ManageAgents
+  usecase "Manage Issue Categories" as UC_ManageCategories_Admin
+  usecase "Define SLA Policies" as UC_DefineSLAs
+  usecase "View Support Reports" as UC_ViewSupportReports
+  usecase "Configure Support System" as UC_ConfigSupportSystem
+  usecase "View All Tickets" as UC_ViewAllTickets_Admin
+  usecase "Deactivate Account {{by Admin}}" as UC_DeactivateAccount_Admin
+  usecase "View Customer Account Details {{by Admin}}" as UC_ViewCustDetails_Admin
+
+  ' --- Customer to Use Case Relationships ---
+  Cust -- UC_SubmitTicket
+  UC_SubmitTicket .> UC_DescribeIssue : <<include>>
+  UC_SubmitTicket .> UC_SelectCategory : <<include>>
+  UC_SubmitTicket .> UC_AttachFiles : <<extend>>
+  Cust -- UC_ViewMyTickets
+  UC_ViewMyTickets .> UC_ViewTicketStatus : <<include>>
+  Cust -- UC_AddComment_Cust
+  Cust -- UC_ReopenTicket_Cust
+  Cust -- UC_CloseTicket_Cust
+  Cust -- UC_RateSupport
+
+  ' --- Support Agent to Use Case Relationships ---
+  Agent -- UC_ViewAssignedTickets
+  Agent -- UC_ViewQueue
+  Agent -- UC_AssignTicket
+  Agent -- UC_InvestigateIssue
+  UC_InvestigateIssue .> UC_SearchKB : <<extend>>
+  Agent -- UC_AddInternalNote
+  Agent -- UC_AddComment_Agent
+  Agent -- UC_EscalateTicket
+  Agent -- UC_ChangeStatus_Agent
+  Agent -- UC_ResolveTicket_Agent
+  Agent -- UC_CloseTicket_Agent
+  Agent -- UC_MergeTickets
+
+  ' --- Administrator to Use Case Relationships ---
+  Admin -- UC_ManageAgents
+  Admin -- UC_ManageCategories_Admin
+  Admin -- UC_DefineSLAs
+  Admin -- UC_ViewSupportReports
+  Admin -- UC_ConfigSupportSystem
+  Admin -- UC_ViewAllTickets_Admin
+  UC_ViewAllTickets_Admin .> UC_AssignTicket : <<extend>> ' Admin can also assign
+
+  ' --- System to Use Case Relationships ---
+  System -- UC_SubmitTicket
+  System -- UC_AddComment_Cust
+  System -- UC_AddComment_Agent
+  System -- UC_ChangeStatus_Agent
+  System -- UC_ResolveTicket_Agent
+  System -- UC_CloseTicket_Agent
+  System -- UC_ViewTicketStatus
+}
+
+@enduml

@@ -1,0 +1,95 @@
+@startuml
+!theme plain
+scale 0.7
+skinparam dpi 300
+skinparam maxMessageSize 150
+skinparam responseMessageBelowArrow true
+skinparam SequenceMessageAlignment center
+skinparam SequenceGroupBodyBackgroundColor transparent
+skinparam SequenceLifeLineBorderColor Grey
+skinparam SequenceArrowColor Black
+skinparam SequenceParticipantBackgroundColor WhiteSmoke
+skinparam SequenceActorBackgroundColor WhiteSmoke
+skinparam SequenceBoxBackgroundColor WhiteSmoke
+skinparam SequenceBoxBorderColor #A0A0A0
+skinparam ParticipantPadding 15
+skinparam Padding 2
+skinparam footbox false
+
+' Inventory Management and Restocking Flow
+title Inventory Management and Restocking Flow
+
+actor "Supplier" as supplier
+actor "Admin" as admin
+participant "Admin\nPortal" as adminportal
+participant "API\nGateway" as gateway
+participant "Inventory\nService" as inventorysvc
+participant "Order\nService" as ordersvc
+participant "Inventory\nDB" as inventorydb
+participant "Product\nService" as productsvc
+participant "Supplier\nPortal" as supplierportal
+participant "Message\nBroker" as broker
+participant "Notification\nService" as notifysvc
+participant "Analytics\nService" as analytics
+
+' Phase 1: Inventory Monitoring
+note over supplier, analytics: Phase 1: Inventory Monitoring
+
+inventorysvc -> inventorydb: Scheduled inventory check
+inventorydb --> inventorysvc: Current inventory levels
+inventorysvc -> inventorysvc: Identify low stock items
+inventorysvc -> broker: Publish LowStockAlert event
+
+group #LightBlue Low Stock Handling
+    broker -> notifysvc: LowStockAlert event
+    notifysvc -> admin: Send low stock notification
+    broker -> analytics: LowStockAlert event
+    analytics -> analytics: Update forecasting models
+end
+
+admin -> adminportal: View low stock items
+adminportal -> gateway: GET /api/v1/admin/inventory/low-stock
+gateway -> inventorysvc: Fetch low stock report
+inventorysvc --> gateway: Return low stock items
+gateway --> adminportal: Display low stock report
+
+' Phase 2: Purchase Order Creation
+note over supplier, analytics: Phase 2: Purchase Order Creation
+
+admin -> adminportal: Create purchase order
+adminportal -> gateway: POST /api/v1/admin/purchase-orders
+gateway -> inventorysvc: Create purchase order
+inventorysvc -> inventorysvc: Generate PO number
+inventorysvc -> supplierportal: Send purchase order
+supplierportal --> supplier: Notify of new order
+supplierportal --> inventorysvc: Order acknowledgement
+inventorysvc --> gateway: PO created confirmation
+gateway --> adminportal: Display PO confirmation
+adminportal --> admin: Show PO details
+
+' Phase 3: Receiving Inventory
+note over supplier, analytics: Phase 3: Receiving Inventory
+
+supplier -> supplierportal: Mark order as shipped
+supplierportal -> inventorysvc: Update PO status to shipped
+admin -> adminportal: Record inventory receipt 
+adminportal -> gateway: POST /api/v1/admin/inventory/receive
+gateway -> inventorysvc: Process inventory receipt
+inventorysvc -> inventorydb: Update inventory levels
+inventorydb --> inventorysvc: Inventory updated
+inventorysvc -> productsvc: Update product availability
+inventorysvc -> broker: Publish InventoryRestocked event
+
+group #LightGreen Restock Notification
+    broker -> notifysvc: InventoryRestocked event
+    notifysvc -> notifysvc: Identify back-in-stock notifications
+    notifysvc --> customer: Send back-in-stock alerts
+    broker -> analytics: InventoryRestocked event
+    analytics -> analytics: Update inventory metrics
+end
+
+inventorysvc --> gateway: Confirmation
+gateway --> adminportal: Receipt confirmation
+adminportal --> admin: Display updated inventory
+
+@enduml

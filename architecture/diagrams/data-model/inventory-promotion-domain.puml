@@ -1,0 +1,126 @@
+@startuml Inventory and Promotion Domains
+' Inventory and Promotion Domains Entity-Relationship Diagram for E-commerce Platform
+
+title Inventory and Promotion Domains - Data Model
+
+' Inventory Domain
+package "Inventory Domain" {
+  entity "Inventory" as inventory {
+    * id : UUID
+    * product_id : UUID
+    * product_variant_id : UUID
+    * warehouse_id : UUID
+    * quantity : int
+    * reserved : int
+    * available : int
+    * reorder_point : int
+    * restock_level : int
+    * updated_at : datetime
+  }
+  
+  entity "InventoryTransaction" as inv_transaction {
+    * id : UUID
+    * inventory_id : UUID
+    * quantity : int
+    * type : enum (STOCK_IN, STOCK_OUT, RESERVE, RELEASE, ADJUSTMENT)
+    * reference_id : UUID
+    * reference_type : string
+    * notes : text
+    * created_by : UUID
+    * created_at : datetime
+  }
+  
+  entity "Warehouse" as warehouse {
+    * id : UUID
+    * name : string
+    * code : string
+    * address_line1 : string
+    * address_line2 : string
+    * city : string
+    * state : string
+    * country : string
+    * postal_code : string
+    * phone : string
+    * email : string
+    * is_active : boolean
+    * created_at : datetime
+    * updated_at : datetime
+  }
+  
+  entity "StockAlert" as stock_alert {
+    * id : UUID
+    * inventory_id : UUID
+    * type : enum (LOW_STOCK, OUT_OF_STOCK)
+    * status : enum (ACTIVE, RESOLVED, IGNORED)
+    * created_at : datetime
+    * resolved_at : datetime
+  }
+}
+
+' Promotion Domain
+package "Promotion Domain" {
+  entity "Promotion" as promotion {
+    * id : UUID
+    * name : string
+    * description : text
+    * type : enum (PERCENTAGE, FIXED_AMOUNT, BUY_X_GET_Y, FREE_SHIPPING)
+    * value : decimal
+    * min_purchase_amount : decimal
+    * max_discount_amount : decimal
+    * applies_to : enum (ORDER, PRODUCT, CATEGORY)
+    * target_id : UUID
+    * start_date : datetime
+    * end_date : datetime
+    * is_active : boolean
+    * usage_limit : int
+    * usage_count : int
+    * created_at : datetime
+    * updated_at : datetime
+  }
+  
+  entity "Coupon" as coupon {
+    * id : UUID
+    * promotion_id : UUID
+    * code : string
+    * type : enum (SINGLE_USE, MULTI_USE, FIRST_TIME_CUSTOMER)
+    * usage_limit : int
+    * usage_limit_per_user : int
+    * usage_count : int
+    * is_active : boolean
+    * created_at : datetime
+    * updated_at : datetime
+  }
+  
+  entity "PromotionRule" as promotion_rule {
+    * id : UUID
+    * promotion_id : UUID
+    * type : enum (PRODUCT, CATEGORY, CUSTOMER_GROUP, MINIMUM_QUANTITY, MINIMUM_AMOUNT)
+    * operator : enum (IN, NOT_IN, EQUALS, NOT_EQUALS, GREATER_THAN, LESS_THAN)
+    * value : string
+    * created_at : datetime
+  }
+  
+  entity "PromotionUsage" as promotion_usage {
+    * id : UUID
+    * promotion_id : UUID
+    * coupon_id : UUID
+    * order_id : UUID
+    * user_id : UUID
+    * discount_amount : decimal
+    * created_at : datetime
+  }
+}
+
+' Relationships
+' Inventory Domain Relationships
+warehouse ||--o{ inventory : stores
+inventory ||--o{ inv_transaction : records
+inventory ||--o{ stock_alert : triggers
+
+' Promotion Domain Relationships
+promotion ||--o{ coupon : has
+promotion ||--o{ promotion_rule : governed_by
+promotion ||--o{ promotion_usage : tracks
+coupon ||--o{ promotion_usage : used_in
+
+@enduml

@@ -1,0 +1,85 @@
+@startuml order-checkout-payment-use-case
+' Fix for clipping issues with comprehensive diagrams
+skinparam Rankdir top-to-bottom
+skinparam dpi 150
+skinparam pageMargin 10
+skinparam pageExternalColor white
+scale max 2000 width
+
+' Basic styling
+skinparam ActorStyle awesome
+skinparam ArrowColor #444444
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam Handwritten false
+skinparam UsecaseBorderThickness 1
+skinparam UsecaseFontSize 12
+skinparam ActorFontSize 14
+
+title Order Checkout & Payment Process Use Cases
+
+left to right direction
+
+actor "Customer" as Cust
+actor "System"
+actor "Payment Gateway" as PayGW <<external>>
+actor "Shipping Service" as ShipSvc <<external>>
+actor "Administrator" as Admin
+
+rectangle "Checkout & Payment System" {
+  usecase "Initiate Checkout" as UC_InitiateCheckout
+  usecase "Provide/Confirm Shipping Address" as UC_ShippingAddress
+  usecase "Select Shipping Method" as UC_ShippingMethod
+  usecase "Calculate Shipping Costs" as UC_CalcShipping
+  usecase "Apply Promotion/Coupon" as UC_ApplyPromo
+  usecase "View Order Summary" as UC_OrderSummary
+  usecase "Select Payment Method" as UC_SelectPaymentMethod
+  usecase "Enter Payment Details" as UC_EnterPaymentDetails
+  usecase "Process Payment" as UC_ProcessPayment
+  usecase "Confirm Order" as UC_ConfirmOrder
+  usecase "Send Order Confirmation" as UC_SendOrderConf
+  usecase "Update Inventory" as UC_UpdateInv
+  usecase "Generate Invoice" as UC_GenInvoice
+  usecase "Handle Payment Failure" as UC_PaymentFailure
+  usecase "Retry Payment" as UC_RetryPayment
+  usecase "View Order Status" as UC_ViewOrderStatus_Cust
+  usecase "Manage Orders" as UC_ManageOrders_Admin
+
+  ' --- Customer to Use Case Relationships ---
+  Cust -- UC_InitiateCheckout
+  UC_InitiateCheckout .> UC_ShippingAddress : <<include>>
+  UC_ShippingAddress .> UC_ShippingMethod : <<include>>
+  UC_ShippingMethod .> UC_CalcShipping : <<include>>
+  UC_CalcShipping .> UC_OrderSummary : <<include>>
+  Cust -- UC_ApplyPromo
+  UC_ApplyPromo .> UC_OrderSummary : <<include>>
+  UC_OrderSummary .> UC_SelectPaymentMethod : <<include>>
+  UC_SelectPaymentMethod .> UC_EnterPaymentDetails : <<include>>
+  UC_EnterPaymentDetails .> UC_ProcessPayment : <<include>>
+  UC_ProcessPayment --> UC_ConfirmOrder : (Success)
+  UC_ProcessPayment --> UC_PaymentFailure : (Failure)
+  UC_PaymentFailure .> UC_RetryPayment : <<extend>>
+  UC_ConfirmOrder .> UC_SendOrderConf : <<include>>
+  UC_ConfirmOrder .> UC_UpdateInv : <<include>>
+  UC_ConfirmOrder .> UC_GenInvoice : <<include>>
+  Cust -- UC_ViewOrderStatus_Cust
+
+  ' --- System to Use Case Relationships ---
+  System -- UC_CalcShipping
+  System -- UC_ProcessPayment
+  System -- UC_SendOrderConf
+  System -- UC_UpdateInv
+  System -- UC_GenInvoice
+  System -- UC_PaymentFailure
+
+  ' --- External Actor Interactions ---
+  UC_CalcShipping -- ShipSvc
+  UC_ProcessPayment -- PayGW
+  
+  ' --- Administrator Interactions ---
+  Admin -- UC_ManageOrders_Admin
+  UC_ManageOrders_Admin .> UC_ViewOrderStatus_Cust : <<extend>> ' Admin can also view status
+
+}
+
+@enduml

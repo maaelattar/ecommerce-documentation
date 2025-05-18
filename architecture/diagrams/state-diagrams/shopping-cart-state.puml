@@ -1,0 +1,125 @@
+@startuml shopping-cart-state
+' Fix for clipping issues with comprehensive diagrams
+!pragma layout smetana
+' Using lower DPI will help prevent clipping
+skinparam dpi 150
+' Set page dimensions explicitly
+skinparam pageMargin 10
+skinparam pageExternalColor white
+' Use a scale factor that prevents clipping but keeps detail
+scale max 2000 width
+
+' Basic styling
+skinparam StateFontSize 14
+skinparam StateFontStyle bold
+skinparam StateBackgroundColor WhiteSmoke
+skinparam StateAttributeFontSize 12
+skinparam ArrowFontSize 12
+skinparam ArrowColor #444444
+skinparam shadowing false
+
+title Shopping Cart State Diagram
+
+[*] --> INITIALIZED : User visits site
+
+state INITIALIZED {
+    [*] --> EMPTY
+    EMPTY --> ITEM_ADDED : First item added
+    EMPTY : No items in cart
+}
+
+INITIALIZED --> ACTIVE : Item added to cart
+
+state ACTIVE {
+    [*] --> SINGLE_ITEM
+    SINGLE_ITEM --> MULTIPLE_ITEMS : Add more items
+    MULTIPLE_ITEMS --> SINGLE_ITEM : Remove items
+    
+    SINGLE_ITEM : Cart with one item
+    MULTIPLE_ITEMS : Cart with multiple items
+    
+    state MULTIPLE_ITEMS {
+        [*] --> STANDARD_ITEMS
+        STANDARD_ITEMS --> MIXED_ITEMS : Add special items
+        MIXED_ITEMS : Contains special handling items
+    }
+}
+
+ACTIVE --> MODIFIED : User updates quantities/options
+
+state MODIFIED {
+    [*] --> QUANTITY_UPDATED
+    [*] --> OPTIONS_CHANGED
+    [*] --> ITEM_REMOVED
+    
+    QUANTITY_UPDATED --> RECALCULATED : Cart totals updated
+    OPTIONS_CHANGED --> RECALCULATED : Cart totals updated
+    ITEM_REMOVED --> RECALCULATED : Cart totals updated
+    RECALCULATED --> SHIPPING_CALCULATED : Shipping cost updated
+    SHIPPING_CALCULATED --> TAX_CALCULATED : Tax updated
+}
+
+MODIFIED --> ACTIVE : Modifications complete
+
+ACTIVE --> PROMO_APPLIED : Coupon/promo code added
+
+state PROMO_APPLIED {
+    [*] --> VALIDATION
+    VALIDATION --> VALID : Code accepted
+    VALIDATION --> INVALID : Code rejected
+    VALID --> DISCOUNT_APPLIED : Price reduced
+    INVALID --> ERROR_DISPLAYED : Show error message
+}
+
+PROMO_APPLIED --> ACTIVE : Continue shopping
+
+ACTIVE --> SAVED : User saves cart for later
+
+state SAVED {
+    [*] --> ACCOUNT_LINKED
+    [*] --> COOKIE_BASED
+    
+    ACCOUNT_LINKED : Saved to user account
+    COOKIE_BASED : Saved to browser cookie
+    
+    ACCOUNT_LINKED --> EMAIL_REMINDER_SENT : Reminder email
+    COOKIE_BASED --> EXPIRES_NOTIFICATION : Cookie expiration notice
+}
+
+SAVED --> ACTIVE : User returns to saved cart
+ACTIVE --> ABANDONED : User leaves site without purchase
+
+state ABANDONED {
+    [*] --> SHORT_TERM
+    SHORT_TERM --> MID_TERM : 24+ hours inactive
+    MID_TERM --> LONG_TERM : 7+ days inactive
+    
+    SHORT_TERM --> RECOVERY_EMAIL_SENT : First recovery email
+    MID_TERM --> RECOVERY_DISCOUNT_SENT : Recovery email with discount
+    LONG_TERM --> FINAL_REMINDER_SENT : Final reminder email
+}
+
+ABANDONED --> ACTIVE : User returns after abandonment 
+ABANDONED --> EXPIRED : Cart expires after 30+ days
+
+ACTIVE --> CHECKOUT_INITIATED : User begins checkout
+
+state CHECKOUT_INITIATED {
+    [*] --> GUEST_CHECKOUT
+    [*] --> ACCOUNT_CHECKOUT
+    
+    GUEST_CHECKOUT --> EMAIL_CAPTURED : Email collection
+    ACCOUNT_CHECKOUT : User logged in
+    
+    EMAIL_CAPTURED --> CHECKOUT_SIGNUP_OFFERED : Registration prompt
+    CHECKOUT_SIGNUP_OFFERED --> CONVERTED_TO_ACCOUNT : User registers
+    CHECKOUT_SIGNUP_OFFERED --> CONTINUED_AS_GUEST : User declines
+}
+
+CHECKOUT_INITIATED --> ORDERED : Checkout completed
+CHECKOUT_INITIATED --> ABORTED : Checkout canceled
+ABORTED --> ACTIVE : Return to cart
+ORDERED --> [*]
+EXPIRED --> [*]
+
+@enduml

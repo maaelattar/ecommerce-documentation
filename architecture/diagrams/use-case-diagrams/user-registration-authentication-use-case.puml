@@ -1,0 +1,88 @@
+@startuml user-registration-authentication-use-case
+' Fix for clipping issues with comprehensive diagrams
+skinparam Rankdir top-to-bottom
+skinparam dpi 150
+skinparam pageMargin 10
+skinparam pageExternalColor white
+scale max 2000 width
+
+' Basic styling
+skinparam ActorStyle awesome
+skinparam ArrowColor #444444
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam Handwritten false
+skinparam UsecaseBorderThickness 1
+skinparam UsecaseFontSize 12
+skinparam ActorFontSize 14
+
+title User Registration & Authentication Use Cases
+
+left to right direction
+
+actor "Guest Customer" as Guest
+actor "Registered Customer" as RegUser
+actor "System"
+
+rectangle "User Management System" {
+  usecase "View Registration Form" as UC_ViewRegForm
+  usecase "Submit Registration Details" as UC_SubmitReg
+  usecase "Validate Registration Data" as UC_ValidateReg
+  usecase "Create User Account" as UC_CreateAccount
+  usecase "Send Verification Email" as UC_SendVerifyEmail
+  usecase "Verify Email Address" as UC_VerifyEmail
+
+  usecase "View Login Form" as UC_ViewLoginForm
+  usecase "Submit Login Credentials" as UC_SubmitLogin
+  usecase "Authenticate User" as UC_Authenticate
+  usecase "Grant Access" as UC_GrantAccess
+  usecase "Display Login Error" as UC_LoginError
+
+  usecase "Request Password Reset" as UC_ReqPassReset
+  usecase "Send Password Reset Link" as UC_SendResetLink
+  usecase "View Password Reset Form" as UC_ViewResetForm
+  usecase "Submit New Password" as UC_SubmitNewPass
+  usecase "Update Password" as UC_UpdatePass
+  
+  usecase "Logout" as UC_Logout
+  usecase "View Account Dashboard" as UC_ViewDashboard
+  usecase "Edit Profile" as UC_EditProfile
+
+  ' Guest Use Cases
+  Guest -- UC_ViewRegForm
+  Guest -- UC_SubmitReg
+  UC_SubmitReg .> UC_ValidateReg : <<include>>
+  UC_ValidateReg .> UC_CreateAccount : <<include>>
+  UC_CreateAccount .> UC_SendVerifyEmail : <<include>>
+  Guest -- UC_VerifyEmail : (Clicks link in email)
+  Guest -- UC_ViewLoginForm
+  Guest -- UC_SubmitLogin
+
+  ' Registered User Use Cases
+  RegUser -- UC_ViewLoginForm
+  RegUser -- UC_SubmitLogin
+  UC_SubmitLogin .> UC_Authenticate : <<include>>
+  UC_Authenticate --> UC_GrantAccess : (Success)
+  UC_Authenticate --> UC_LoginError : (Failure)
+  UC_GrantAccess .> UC_ViewDashboard : <<include>>
+  
+  RegUser -- UC_ReqPassReset
+  UC_ReqPassReset .> UC_SendResetLink : <<include>>
+  RegUser -- UC_ViewResetForm : (Clicks link in email)
+  RegUser -- UC_SubmitNewPass
+  UC_SubmitNewPass .> UC_UpdatePass : <<include>>
+  
+  RegUser -- UC_Logout
+  RegUser -- UC_ViewDashboard
+  RegUser -- UC_EditProfile
+  
+  ' System Interactions
+  System -- UC_ValidateReg
+  System -- UC_CreateAccount
+  System -- UC_SendVerifyEmail
+  System -- UC_Authenticate
+  System -- UC_SendResetLink
+  System -- UC_UpdatePass
+}
+
+@enduml

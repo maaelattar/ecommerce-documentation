@@ -1,0 +1,101 @@
+@startuml product-catalog-inventory-use-case
+' Fix for clipping issues with comprehensive diagrams
+skinparam Rankdir top-to-bottom
+skinparam dpi 150
+skinparam pageMargin 10
+skinparam pageExternalColor white
+scale max 2000 width
+
+' Basic styling
+skinparam ActorStyle awesome
+skinparam ArrowColor #444444
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam Handwritten false
+skinparam UsecaseBorderThickness 1
+skinparam UsecaseFontSize 12
+skinparam ActorFontSize 14
+
+title Product Catalog & Inventory Management Use Cases
+
+left to right direction
+
+actor "Administrator" as Admin
+actor "Customer" as Cust
+actor "System"
+
+rectangle "Product & Inventory System" {
+  ' Product Management Use Cases
+  usecase "Manage Product Listings" as UC_ManageProdList
+  usecase "Add New Product" as UC_AddProd
+  usecase "Edit Product Details" as UC_EditProd
+  usecase "Delete Product" as UC_DeleteProd
+  usecase "View Product List" as UC_ViewProdList
+  usecase "Manage Product Categories" as UC_ManageCategories
+  usecase "Manage Product Attributes" as UC_ManageAttributes
+  usecase "Set Product Pricing" as UC_SetPricing
+  usecase "Upload Product Images/Media" as UC_UploadMedia
+  usecase "Manage Product Reviews" as UC_ManageReviews
+
+  ' Inventory Management Use Cases
+  usecase "Manage Inventory Stock" as UC_ManageStock
+  usecase "Update Stock Levels" as UC_UpdateStock
+  usecase "View Inventory Reports" as UC_ViewInventoryReports
+  usecase "Set Low Stock Alerts" as UC_SetLowStockAlerts
+  usecase "Manage Suppliers" as UC_ManageSuppliers
+  usecase "Receive New Stock" as UC_ReceiveStock
+
+  ' Customer Catalog Interaction Use Cases
+  usecase "Browse Product Catalog" as UC_BrowseCatalog
+  usecase "Search for Products" as UC_SearchProducts
+  usecase "View Product Details" as UC_ViewProductDetails
+  usecase "Filter Products" as UC_FilterProducts
+  usecase "Sort Products" as UC_SortProducts
+  usecase "View Product Reviews & Ratings" as UC_ViewReviews
+  usecase "Check Stock Availability" as UC_CheckStock
+
+  ' System Use Cases
+  usecase "Update Product Visibility" as UC_UpdateVisibility
+  usecase "Generate Product Recommendations" as UC_GenRecs
+  usecase "Notify Low Stock" as UC_NotifyLowStock
+  usecase "Reflect Stock Changes" as UC_ReflectStockChanges
+
+  ' --- Administrator to Use Case Relationships ---
+  Admin -- UC_ManageProdList
+  UC_ManageProdList .> UC_AddProd : <<include>>
+  UC_ManageProdList .> UC_EditProd : <<include>>
+  UC_ManageProdList .> UC_DeleteProd : <<include>>
+  UC_ManageProdList .> UC_ViewProdList : <<include>>
+  Admin -- UC_ManageCategories
+  Admin -- UC_ManageAttributes
+  Admin -- UC_SetPricing
+  Admin -- UC_UploadMedia
+  Admin -- UC_ManageReviews
+  
+  Admin -- UC_ManageStock
+  UC_ManageStock .> UC_UpdateStock : <<include>>
+  UC_ManageStock .> UC_ReceiveStock : <<include>>
+  Admin -- UC_ViewInventoryReports
+  Admin -- UC_SetLowStockAlerts
+  Admin -- UC_ManageSuppliers
+
+  ' --- Customer to Use Case Relationships ---
+  Cust -- UC_BrowseCatalog
+  Cust -- UC_SearchProducts
+  Cust -- UC_ViewProductDetails
+  UC_ViewProductDetails .> UC_CheckStock : <<include>>
+  UC_ViewProductDetails .> UC_ViewReviews : <<extend>>
+  Cust -- UC_FilterProducts
+  Cust -- UC_SortProducts
+
+  ' --- System to Use Case Relationships ---
+  System -- UC_UpdateVisibility
+  System -- UC_GenRecs
+  System -- UC_NotifyLowStock
+  UC_SetLowStockAlerts .> UC_NotifyLowStock : <<include>>
+  System -- UC_ReflectStockChanges
+  UC_UpdateStock .> UC_ReflectStockChanges : <<include>>
+  UC_ReceiveStock .> UC_ReflectStockChanges : <<include>>
+}
+
+@enduml

@@ -1,0 +1,163 @@
+@startuml Order Domain
+' Order Domain Entity-Relationship Diagram for E-commerce Platform
+
+title Order Domain - Data Model
+
+entity "Cart" as cart {
+  * id : UUID
+  * user_id : UUID
+  * session_id : UUID
+  * status : enum (ACTIVE, MERGED, ABANDONED, CONVERTED)
+  * created_at : datetime
+  * updated_at : datetime
+  * expires_at : datetime
+}
+
+entity "CartItem" as cart_item {
+  * id : UUID
+  * cart_id : UUID
+  * product_id : UUID
+  * product_variant_id : UUID
+  * quantity : int
+  * unit_price : decimal
+  * total_price : decimal
+  * created_at : datetime
+  * updated_at : datetime
+}
+
+entity "Order" as order {
+  * id : UUID
+  * order_number : string
+  * user_id : UUID
+  * status : enum (PENDING, PROCESSING, SHIPPED, DELIVERED, CANCELED, REFUNDED)
+  * total : decimal
+  * subtotal : decimal
+  * tax : decimal
+  * shipping : decimal
+  * discount : decimal
+  * shipping_address_id : UUID
+  * billing_address_id : UUID
+  * payment_method : string
+  * shipping_method : string
+  * notes : text
+  * created_at : datetime
+  * updated_at : datetime
+}
+
+entity "OrderItem" as order_item {
+  * id : UUID
+  * order_id : UUID
+  * product_id : UUID
+  * product_variant_id : UUID
+  * product_name : string
+  * product_sku : string
+  * quantity : int
+  * unit_price : decimal
+  * subtotal : decimal
+  * discount : decimal
+  * tax : decimal
+  * total : decimal
+  * created_at : datetime
+}
+
+entity "OrderStatusHistory" as status_history {
+  * id : UUID
+  * order_id : UUID
+  * status : enum
+  * comment : text
+  * created_by : UUID
+  * created_at : datetime
+}
+
+entity "Payment" as payment {
+  * id : UUID
+  * order_id : UUID
+  * amount : decimal
+  * status : enum (PENDING, AUTHORIZED, CAPTURED, FAILED, REFUNDED, PARTIALLY_REFUNDED)
+  * provider : string
+  * transaction_id : string
+  * payment_method : string
+  * payment_details : json
+  * created_at : datetime
+  * updated_at : datetime
+}
+
+entity "Refund" as refund {
+  * id : UUID
+  * order_id : UUID
+  * payment_id : UUID
+  * amount : decimal
+  * status : enum (PENDING, PROCESSED, FAILED)
+  * reason : string
+  * notes : text
+  * created_by : UUID
+  * created_at : datetime
+  * updated_at : datetime
+}
+
+entity "RefundItem" as refund_item {
+  * id : UUID
+  * refund_id : UUID
+  * order_item_id : UUID
+  * quantity : int
+  * amount : decimal
+  * reason : string
+}
+
+entity "Shipment" as shipment {
+  * id : UUID
+  * order_id : UUID
+  * status : enum (PENDING, PROCESSING, SHIPPED, DELIVERED, RETURNED)
+  * tracking_number : string
+  * carrier : string
+  * shipping_method : string
+  * shipping_cost : decimal
+  * shipped_at : datetime
+  * delivered_at : datetime
+  * created_at : datetime
+  * updated_at : datetime
+}
+
+entity "ShipmentItem" as shipment_item {
+  * id : UUID
+  * shipment_id : UUID
+  * order_item_id : UUID
+  * quantity : int
+}
+
+entity "Return" as return {
+  * id : UUID
+  * order_id : UUID
+  * status : enum (REQUESTED, APPROVED, RECEIVED, REJECTED, COMPLETED)
+  * reason : string
+  * notes : text
+  * created_at : datetime
+  * updated_at : datetime
+}
+
+entity "ReturnItem" as return_item {
+  * id : UUID
+  * return_id : UUID
+  * order_item_id : UUID
+  * quantity : int
+  * reason : string
+  * condition : enum (NEW, USED, DAMAGED)
+}
+
+' Relationships
+cart ||--o{ cart_item : contains
+order ||--o{ order_item : contains
+order ||--o{ status_history : tracks
+order ||--o{ payment : has
+order ||--o{ shipment : has
+order ||--o{ refund : has
+order ||--o{ return : has
+payment ||--o{ refund : triggers
+refund ||--o{ refund_item : details
+shipment ||--o{ shipment_item : contains
+return ||--o{ return_item : includes
+order_item ||--o{ shipment_item : fulfilled_by
+order_item ||--o{ refund_item : refunded_for
+order_item ||--o{ return_item : returned_for
+
+@enduml

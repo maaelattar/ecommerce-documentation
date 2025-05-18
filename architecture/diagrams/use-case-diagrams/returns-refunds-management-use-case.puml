@@ -1,0 +1,97 @@
+@startuml returns-refunds-management-use-case
+' Fix for clipping issues with comprehensive diagrams
+skinparam Rankdir top-to-bottom
+skinparam dpi 150
+skinparam pageMargin 10
+skinparam pageExternalColor white
+scale max 2000 width
+
+' Basic styling
+skinparam ActorStyle awesome
+skinparam ArrowColor #444444
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam Handwritten false
+skinparam UsecaseBorderThickness 1
+skinparam UsecaseFontSize 12
+skinparam ActorFontSize 14
+
+title Returns & Refunds Management (RMA) Use Cases
+
+left to right direction
+
+actor "Registered Customer" as RegUser
+actor "Administrator" as Admin
+actor "Warehouse Staff" as Staff
+actor "System"
+actor "Payment Gateway" as PayGW <<external>>
+actor "Shipping Service" as ShipSvc <<external>>
+
+rectangle "Returns & Refunds System" {
+  ' Customer Use Cases
+  usecase "Request Return RMA" as UC_RequestReturn
+  usecase "Select Items to Return" as UC_SelectReturnItems
+  usecase "Specify Reason for Return" as UC_SpecifyReason
+  usecase "Receive Return Instructions/Label" as UC_ReceiveReturnLabel
+  usecase "Ship Returned Items" as UC_ShipReturn
+  usecase "Track Return Status" as UC_TrackReturnStatus
+  usecase "View Refund Status" as UC_ViewRefundStatus
+
+  ' Administrator/Support Staff Use Cases
+  usecase "Review RMA Request" as UC_ReviewRMA
+  usecase "Approve RMA Request" as UC_ApproveRMA
+  usecase "Reject RMA Request" as UC_RejectRMA
+  usecase "Issue Return Label" as UC_IssueReturnLabel
+  usecase "Receive Returned Items" as UC_ReceiveReturnedItems #lightblue
+  note right of UC_ReceiveReturnedItems: Warehouse Staff
+  usecase "Inspect Returned Items" as UC_InspectItems #lightblue
+  note right of UC_InspectItems: Warehouse Staff
+  usecase "Update Inventory for Returned Items" as UC_UpdateReturnInventory
+  note right of UC_UpdateReturnInventory: System/Staff
+  usecase "Process Refund" as UC_ProcessRefund
+  usecase "Issue Store Credit" as UC_IssueStoreCredit
+  note right of UC_IssueStoreCredit: Alternative to refund
+  usecase "Communicate with Customer about Return" as UC_CommunicateReturn
+  usecase "Manage Return Policies" as UC_ManageReturnPolicies #pink
+  note right of UC_ManageReturnPolicies: Admin
+
+  ' --- Registered Customer to Use Case Relationships ---
+  RegUser -- UC_RequestReturn
+  UC_RequestReturn .> UC_SelectReturnItems : <<include>>
+  UC_RequestReturn .> UC_SpecifyReason : <<include>>
+  UC_RequestReturn .> UC_ReceiveReturnLabel : <<extend>> ' If approved
+  RegUser -- UC_ShipReturn
+  RegUser -- UC_TrackReturnStatus
+  RegUser -- UC_ViewRefundStatus
+
+  ' --- Administrator/Support Staff to Use Case Relationships ---
+  Admin -- UC_ReviewRMA
+  UC_ReviewRMA --> UC_ApproveRMA : (Approve)
+  UC_ReviewRMA --> UC_RejectRMA : (Reject)
+  UC_ApproveRMA .> UC_IssueReturnLabel : <<include>>
+  Admin -- UC_ProcessRefund
+  Admin -- UC_IssueStoreCredit
+  Admin -- UC_CommunicateReturn
+  Admin -- UC_ManageReturnPolicies
+
+  ' --- Warehouse Staff to Use Case Relationships ---
+  Staff -- UC_ReceiveReturnedItems
+  Staff -- UC_InspectItems
+  UC_InspectItems .> UC_UpdateReturnInventory : <<include>> ' Based on inspection results
+  UC_InspectItems .> UC_ProcessRefund : <<extend>> ' Triggers refund if items are OK
+  UC_InspectItems .> UC_IssueStoreCredit : <<extend>> ' Alternative trigger
+
+  ' --- System to Use Case Relationships ---
+  System -- UC_IssueReturnLabel
+  System -- UC_UpdateReturnInventory
+  System -- UC_ProcessRefund
+  System -- UC_TrackReturnStatus
+  System -- UC_ViewRefundStatus
+
+  ' --- External Actor Interactions ---
+  UC_IssueReturnLabel -- ShipSvc : (Generate Label)
+  UC_ShipReturn -- ShipSvc : (Customer uses service)
+  UC_ProcessRefund -- PayGW
+}
+
+@enduml

@@ -1,0 +1,99 @@
+@startuml payment-processing-state
+' Fix for clipping issues with comprehensive diagrams
+!pragma layout smetana
+' Using lower DPI will help prevent clipping
+skinparam dpi 150
+' Set page dimensions explicitly
+skinparam pageMargin 10
+skinparam pageExternalColor white
+' Use a scale factor that prevents clipping but keeps detail
+scale max 2000 width
+
+' Basic styling
+skinparam StateFontSize 14
+skinparam StateFontStyle bold
+skinparam StateBackgroundColor WhiteSmoke
+skinparam StateAttributeFontSize 12
+skinparam ArrowFontSize 12
+skinparam ArrowColor #444444
+skinparam shadowing false
+
+title Payment Processing State Diagram
+
+[*] --> PAYMENT_INITIATED : Customer submits payment info
+
+state PAYMENT_INITIATED {
+    [*] --> VALIDATION
+    VALIDATION --> DATA_VERIFICATION : Basic validation passed
+    DATA_VERIFICATION --> METHOD_SELECTION : Data verified
+    METHOD_SELECTION --> CREDIT_CARD : Credit card selected
+    METHOD_SELECTION --> DIGITAL_WALLET : Digital wallet selected
+    METHOD_SELECTION --> BANK_TRANSFER : Direct bank payment
+    
+    VALIDATION : Check required fields
+    DATA_VERIFICATION : Verify address/postal code
+    METHOD_SELECTION : Select payment method
+}
+
+PAYMENT_INITIATED --> PROCESSING : Submit to payment gateway
+
+state PROCESSING {
+    [*] --> FRAUD_CHECK
+    FRAUD_CHECK --> ADDRESS_VERIFICATION : Pass fraud screening
+    ADDRESS_VERIFICATION --> AUTHORIZATION_REQUEST : Address verified
+    AUTHORIZATION_REQUEST : Request funds hold
+    AUTHORIZATION_REQUEST : Check available credit
+}
+
+PROCESSING --> DECLINED : Payment declined
+
+state DECLINED {
+    [*] --> INSUFFICIENT_FUNDS
+    [*] --> FRAUD_SUSPECTED
+    [*] --> CARD_EXPIRED
+    [*] --> TECHNICAL_ERROR
+    
+    INSUFFICIENT_FUNDS --> RETRY_OPTION
+    CARD_EXPIRED --> RETRY_OPTION
+    TECHNICAL_ERROR --> RETRY_OPTION
+    RETRY_OPTION : Allow customer to try again
+}
+
+DECLINED --> PAYMENT_INITIATED : Customer retries
+PROCESSING --> AUTHORIZED : Payment authorized
+
+state AUTHORIZED {
+    [*] --> PENDING_CAPTURE
+    PENDING_CAPTURE --> CAPTURED : Funds captured
+    CAPTURED : Money transferred from customer
+}
+
+AUTHORIZED --> SETTLEMENT : Begin settlement process
+
+state SETTLEMENT {
+    [*] --> SETTLEMENT_PENDING
+    SETTLEMENT_PENDING --> SETTLED : Funds transferred to merchant
+    SETTLED : Money received by merchant
+}
+
+SETTLEMENT --> COMPLETED : Payment completed
+SETTLEMENT --> DISPUTED : Customer disputes charge
+
+state DISPUTED {
+    [*] --> CHARGEBACK_INITIATED
+    CHARGEBACK_INITIATED --> EVIDENCE_COLLECTION
+    EVIDENCE_COLLECTION --> UNDER_REVIEW
+    UNDER_REVIEW --> DISPUTE_RESOLVED
+    DISPUTE_RESOLVED --> MERCHANT_WINS : Charge upheld
+    DISPUTE_RESOLVED --> CUSTOMER_WINS : Charge reversed
+    
+    CHARGEBACK_INITIATED : Customer claims issue
+    EVIDENCE_COLLECTION : Merchant provides proof
+    UNDER_REVIEW : Payment processor review
+}
+
+DISPUTED --> REFUNDED : Process refund
+REFUNDED --> [*]
+COMPLETED --> [*]
+
+@enduml

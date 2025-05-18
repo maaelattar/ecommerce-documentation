@@ -1,0 +1,87 @@
+@startuml customer-account-management-use-case
+' Fix for clipping issues with comprehensive diagrams
+skinparam Rankdir top-to-bottom
+skinparam dpi 150
+skinparam pageMargin 10
+skinparam pageExternalColor white
+scale max 2000 width
+
+' Basic styling
+skinparam ActorStyle awesome
+skinparam ArrowColor #444444
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam Handwritten false
+skinparam UsecaseBorderThickness 1
+skinparam UsecaseFontSize 12
+skinparam ActorFontSize 14
+
+title Customer Account Management Use Cases
+
+left to right direction
+
+actor "Registered Customer" as RegUser
+actor "Administrator" as Admin
+actor "System"
+
+rectangle "Customer Account System" {
+  usecase "View Account Dashboard" as UC_ViewDashboard
+  usecase "Update Profile Information" as UC_UpdateProfile
+  usecase "Change Password" as UC_ChangePassword
+  usecase "Manage Shipping Addresses" as UC_ManageAddresses
+  usecase "Add New Address" as UC_AddAddress
+  usecase "Edit Address" as UC_EditAddress
+  usecase "Delete Address" as UC_DeleteAddress
+  usecase "Set Default Address" as UC_SetDefaultAddress
+  usecase "Manage Payment Methods" as UC_ManagePaymentMethods
+  usecase "Add Payment Method" as UC_AddPayment
+  usecase "Remove Payment Method" as UC_RemovePayment
+  usecase "View Order History" as UC_ViewOrderHistory
+  usecase "View Order Details" as UC_ViewOrderDetails
+  usecase "Reorder Items" as UC_Reorder
+  usecase "Manage Communication Preferences" as UC_ManageCommsPrefs
+  usecase "Subscribe/Unsubscribe Newsletters" as UC_NewsletterPrefs
+  usecase "Manage Wishlist" as UC_ManageWishlist
+  usecase "View Product Reviews Submitted" as UC_ViewMyReviews
+  usecase "Request Account Deletion" as UC_ReqAccountDeletion
+  usecase "Deactivate Account" as UC_DeactivateAccount_Admin #pink
+  note right of UC_DeactivateAccount_Admin: by Admin
+  usecase "View Customer Account Details" as UC_ViewCustDetails_Admin #pink
+  note right of UC_ViewCustDetails_Admin: by Admin
+
+  ' --- Registered Customer to Use Case Relationships ---
+  RegUser -- UC_ViewDashboard
+  UC_ViewDashboard .> UC_UpdateProfile : <<extend>>
+  UC_ViewDashboard .> UC_ChangePassword : <<extend>>
+  UC_ViewDashboard .> UC_ManageAddresses : <<extend>>
+  UC_ManageAddresses .> UC_AddAddress : <<include>>
+  UC_ManageAddresses .> UC_EditAddress : <<include>>
+  UC_ManageAddresses .> UC_DeleteAddress : <<include>>
+  UC_ManageAddresses .> UC_SetDefaultAddress : <<include>>
+  UC_ViewDashboard .> UC_ManagePaymentMethods : <<extend>>
+  UC_ManagePaymentMethods .> UC_AddPayment : <<include>>
+  UC_ManagePaymentMethods .> UC_RemovePayment : <<include>>
+  UC_ViewDashboard .> UC_ViewOrderHistory : <<extend>>
+  UC_ViewOrderHistory .> UC_ViewOrderDetails : <<include>>
+  UC_ViewOrderDetails .> UC_Reorder : <<extend>>
+  RegUser -- UC_ManageCommsPrefs
+  UC_ManageCommsPrefs .> UC_NewsletterPrefs : <<include>>
+  RegUser -- UC_ManageWishlist
+  RegUser -- UC_ViewMyReviews
+  RegUser -- UC_ReqAccountDeletion
+
+  ' --- Administrator to Use Case Relationships ---
+  Admin -- UC_ViewCustDetails_Admin
+  Admin -- UC_DeactivateAccount_Admin
+  UC_ReqAccountDeletion .> UC_DeactivateAccount_Admin : <<extend>> ' User request can lead to admin action
+
+  ' --- System to Use Case Relationships ---
+  System -- UC_UpdateProfile
+  System -- UC_ChangePassword
+  System -- UC_ManageAddresses
+  System -- UC_ManagePaymentMethods
+  System -- UC_ManageCommsPrefs
+  System -- UC_ReqAccountDeletion
+}
+
+@enduml

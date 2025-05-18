@@ -1,0 +1,65 @@
+@startuml user-account-state
+' Fix for clipping issues with comprehensive diagrams
+!pragma layout smetana
+' Using lower DPI will help prevent clipping
+skinparam dpi 150
+' Set page dimensions explicitly
+skinparam pageMargin 10
+skinparam pageExternalColor white
+' Use a scale factor that prevents clipping but keeps detail
+scale max 2000 width
+
+' Basic styling
+skinparam StateFontSize 14
+skinparam StateFontStyle bold
+skinparam StateBackgroundColor WhiteSmoke
+skinparam StateAttributeFontSize 12
+skinparam ArrowFontSize 12
+skinparam ArrowColor #444444
+skinparam shadowing false
+
+title User Account State Diagram
+
+[*] --> GUEST : Visit site anonymously
+
+state GUEST {
+    [*] --> BROWSING
+    BROWSING --> CART_CREATED : Add item to cart
+    CART_CREATED --> ABANDONED_CART : Exit without purchase
+    CART_CREATED --> GUEST_CHECKOUT : Proceed to checkout
+    GUEST_CHECKOUT : Email required
+    GUEST_CHECKOUT : No password creation
+}
+
+GUEST --> REGISTERED : Create account with email/password
+
+state REGISTERED {
+    [*] --> UNVERIFIED
+    UNVERIFIED --> EMAIL_VERIFIED : Click verification link
+    EMAIL_VERIFIED --> COMPLETE_PROFILE : Add personal details
+    COMPLETE_PROFILE --> ACTIVE : Profile completed
+    
+    state ACTIVE {
+        [*] --> REGULAR
+        REGULAR --> PREMIUM : Subscribe to premium
+        REGULAR --> LOYALTY_TIER_1 : Achieve tier 1 status
+        LOYALTY_TIER_1 --> LOYALTY_TIER_2 : Achieve tier 2 status
+        LOYALTY_TIER_2 --> LOYALTY_TIER_3 : Achieve tier 3 status
+        PREMIUM --> REGULAR : Premium expires
+    }
+    
+    ACTIVE --> LOCKED : Multiple failed login attempts
+    LOCKED --> ACTIVE : Verify identity & reset password
+    ACTIVE --> PASSWORD_RESET : Request password reset
+    PASSWORD_RESET --> ACTIVE : Complete password reset
+}
+
+GUEST_CHECKOUT --> CONVERTED : Register after checkout
+REGISTERED --> DORMANT : No activity for 180+ days
+DORMANT --> REGISTERED : Return and login
+REGISTERED --> DEACTIVATED : User deactivates account
+DEACTIVATED --> REGISTERED : User reactivates account
+REGISTERED --> DELETED : User or admin deletes account
+DELETED --> [*]
+
+@enduml

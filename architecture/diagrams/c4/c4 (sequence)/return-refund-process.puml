@@ -1,0 +1,79 @@
+@startuml
+!theme plain
+scale 0.7
+skinparam dpi 300
+skinparam maxMessageSize 150
+skinparam responseMessageBelowArrow true
+skinparam SequenceMessageAlignment center
+skinparam SequenceGroupBodyBackgroundColor transparent
+skinparam SequenceLifeLineBorderColor Grey
+skinparam SequenceArrowColor Black
+skinparam SequenceParticipantBackgroundColor WhiteSmoke
+skinparam SequenceActorBackgroundColor WhiteSmoke
+skinparam SequenceBoxBackgroundColor WhiteSmoke
+skinparam SequenceBoxBorderColor #A0A0A0
+skinparam ParticipantPadding 15
+skinparam Padding 2
+skinparam footbox false
+
+' Return/Refund Process Flow
+title Return and Refund Process Flow
+
+actor "Customer" as customer
+participant "Web\nApp" as webapp
+participant "API\nGateway" as gateway
+participant "Return\nService" as returnsvc
+participant "Order\nService" as ordersvc
+participant "Inventory\nService" as invsvc
+participant "Payment\nService" as paymentsvc
+participant "Payment\nGateway" as paymentgw
+participant "Message\nBroker" as broker
+participant "Notification\nService" as notifysvc
+actor "Admin" as admin
+participant "Admin\nPortal" as adminportal
+
+' Phase 1: Return Request Initiation
+note over customer, admin: Phase 1: Return Request Initiation
+
+customer -> webapp: Initiate return for order
+webapp -> gateway: POST /api/v1/returns
+gateway -> returnsvc: Create return request
+returnsvc -> ordersvc: Validate order eligibility
+ordersvc --> returnsvc: Order eligible for return
+returnsvc -> returnsvc: Generate return label
+returnsvc --> gateway: Return request created
+gateway --> webapp: Return confirmation & label
+webapp --> customer: Display return instructions
+
+' Phase 2: Return Processing
+note over customer, admin: Phase 2: Return Processing
+
+customer -> returnsvc: Ship item back
+admin -> adminportal: Access return queue
+adminportal -> gateway: GET /api/v1/admin/returns
+gateway -> returnsvc: Fetch pending returns
+returnsvc --> gateway: Return pending list
+gateway --> adminportal: Display pending returns
+admin -> adminportal: Mark return as received
+adminportal -> gateway: PATCH /api/v1/admin/returns/{id}
+gateway -> returnsvc: Update return status
+returnsvc -> invsvc: Restock inventory
+invsvc --> returnsvc: Inventory updated
+returnsvc -> returnsvc: Approve refund
+returnsvc --> gateway: Return updated
+gateway --> adminportal: Confirmation
+
+' Phase 3: Refund Processing
+note over customer, admin: Phase 3: Refund Processing
+
+returnsvc -> paymentsvc: Process refund
+paymentsvc -> paymentgw: Issue refund to customer
+paymentgw --> paymentsvc: Refund processed
+paymentsvc --> returnsvc: Refund confirmation
+returnsvc -> broker: Publish RefundIssued event
+broker -> notifysvc: RefundIssued event
+notifysvc --> customer: Send refund confirmation email
+returnsvc -> ordersvc: Update order with refund info
+ordersvc --> returnsvc: Order updated
+
+@enduml

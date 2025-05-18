@@ -1,0 +1,119 @@
+@startuml ecommerce-overview-use-case
+' Fix for clipping issues with comprehensive diagrams
+skinparam Rankdir top-to-bottom
+' Using lower DPI will help prevent clipping
+skinparam dpi 150
+' Set page dimensions explicitly
+skinparam pageMargin 10
+skinparam pageExternalColor white
+' Use a scale factor that prevents clipping but keeps detail
+scale max 2000 width
+
+' Basic styling
+skinparam ActorStyle awesome
+skinparam ArrowColor #444444
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam Handwritten false
+skinparam UsecaseBorderThickness 1
+skinparam UsecaseFontSize 12
+skinparam ActorFontSize 14
+
+title E-Commerce Platform - Overview Use Cases
+
+left to right direction
+
+actor "Customer" as Cust
+actor "Guest Customer" as GuestCust
+actor "Registered Customer" as RegCust
+actor "Administrator" as Admin
+actor "System"
+actor "Payment Gateway" as PayGW <<external>>
+actor "Shipping Service" as ShipSvc <<external>>
+
+GuestCust --|> Cust
+RegCust --|> Cust
+
+rectangle "E-Commerce System" {
+  ' Customer Use Cases (General)
+  usecase "Browse Products" as UC_Browse
+  usecase "View Product Details" as UC_ViewDetails
+  usecase "Search Products" as UC_Search
+  usecase "Manage Shopping Cart" as UC_ManageCart
+  usecase "Proceed to Checkout" as UC_Checkout
+
+  ' Guest Customer Specific
+  usecase "Register Account" as UC_Register
+
+  ' Registered Customer Specific
+  usecase "Login to Account" as UC_Login
+  usecase "Manage Account" as UC_ManageAccount
+  usecase "View Order History" as UC_OrderHistory
+  usecase "Manage Wishlist" as UC_ManageWishlist
+  usecase "Submit Product Review" as UC_SubmitReview
+  usecase "Track Order" as UC_TrackOrderGuestOrReg
+
+  ' Checkout Sub-Use Cases
+  usecase "Provide Shipping Info" as UC_ShipInfo
+  usecase "Provide Payment Info" as UC_PayInfo
+  usecase "Confirm Order" as UC_ConfirmOrder
+
+  ' Administrator Use Cases
+  usecase "Manage Products" as UC_ManageProducts
+  usecase "Manage Inventory" as UC_ManageInventory
+  usecase "Manage Orders" as UC_ManageOrders
+  usecase "Manage Customers" as UC_ManageCustomers
+  usecase "Manage Promotions" as UC_ManagePromos
+  usecase "View Reports" as UC_ViewReports
+  usecase "Configure System" as UC_ConfigSystem
+
+  ' System Use Cases / Interactions
+  usecase "Process Payment" as UC_ProcessPayment
+  usecase "Update Inventory Levels" as UC_UpdateInventory
+  usecase "Send Notifications" as UC_SendNotifs
+  usecase "Calculate Shipping" as UC_CalcShip
+
+  ' --- Actor to Use Case Relationships ---
+  Cust -- UC_Browse
+  Cust -- UC_ViewDetails
+  Cust -- UC_Search
+  Cust -- UC_ManageCart
+  Cust -- UC_Checkout
+  Cust -- UC_TrackOrderGuestOrReg
+
+  GuestCust -- UC_Register
+
+  RegCust -- UC_Login
+  RegCust -- UC_ManageAccount
+  RegCust -- UC_OrderHistory
+  RegCust -- UC_ManageWishlist
+  RegCust -- UC_SubmitReview
+
+  Admin -- UC_ManageProducts
+  Admin -- UC_ManageInventory
+  Admin -- UC_ManageOrders
+  Admin -- UC_ManageCustomers
+  Admin -- UC_ManagePromos
+  Admin -- UC_ViewReports
+  Admin -- UC_ConfigSystem
+
+  ' --- Include/Extend Relationships ---
+  UC_Checkout .> UC_ShipInfo : <<include>>
+  UC_Checkout .> UC_PayInfo : <<include>>
+  UC_Checkout .> UC_ConfirmOrder : <<include>>
+  UC_PayInfo .> UC_ProcessPayment : <<include>>
+  
+  UC_ManageAccount .> UC_OrderHistory : <<include>>
+
+  ' --- System Interactions ---
+  System -- UC_UpdateInventory
+  System -- UC_SendNotifs
+  System -- UC_ProcessPayment
+  System -- UC_CalcShip
+
+  UC_ProcessPayment -- PayGW
+  UC_CalcShip -- ShipSvc
+  UC_ManageOrders -- ShipSvc : (Initiate Shipment)
+}
+
+@enduml

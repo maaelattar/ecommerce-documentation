@@ -1,0 +1,86 @@
+@startuml
+!theme plain
+scale max 1200 width
+skinparam dpi 300
+skinparam maxMessageSize 250
+skinparam responseMessageBelowArrow true
+skinparam SequenceMessageAlignment center
+skinparam SequenceGroupBodyBackgroundColor transparent
+skinparam SequenceDividerBackgroundColor WhiteSmoke
+skinparam SequenceReferenceBackgroundColor WhiteSmoke
+skinparam SequenceBoxBackgroundColor WhiteSmoke
+skinparam SequenceLifeLineBorderColor Grey
+skinparam SequenceArrowColor Black
+skinparam SequenceParticipantBackgroundColor WhiteSmoke
+skinparam SequenceActorBackgroundColor WhiteSmoke
+skinparam BoxPadding 10
+skinparam ParticipantPadding 10
+skinparam Padding 2
+skinparam SequenceDividerFontStyle bold
+skinparam SequenceReferenceFontStyle bold
+skinparam SequenceBoxFontStyle bold
+skinparam PageMargin 10
+skinparam PageExternalColor White
+skinparam PageBorderColor White
+
+' User Registration and Authentication Sequence Diagram
+title User Registration and Authentication Flow
+
+actor "Customer" as customer
+participant "Web App" as webapp
+participant "API Gateway" as gateway
+participant "Identity Provider (IdP)" as idp
+participant "User Service" as usersvc
+participant "Message Broker\n(RabbitMQ)" as broker
+participant "Notification Service" as notificationsvc
+participant "Email Service" as emailsvc
+
+box "Phase 1: User Registration" #LightBlue
+customer -> webapp: Navigate to registration form
+webapp -> webapp: Display registration form
+customer -> webapp: Submit registration details
+webapp -> idp: Register new user
+idp -> idp: Create user account
+idp -> idp: Generate verification token
+idp --> webapp: Return user created response
+webapp -> gateway: POST /api/v1/users
+gateway -> usersvc: Forward user profile creation
+usersvc -> usersvc: Store user profile
+usersvc -> broker: Publish UserRegistered event
+usersvc --> gateway: Return profile created response
+gateway --> webapp: Return success response
+webapp --> customer: Show registration confirmation
+
+broker -> notificationsvc: UserRegistered event
+notificationsvc -> emailsvc: Send verification email
+emailsvc --> customer: Email with verification link
+end box
+
+box "Phase 2: Email Verification" #LightGreen
+customer -> emailsvc: Click verification link
+emailsvc -> idp: Redirect to verify endpoint with token
+idp -> idp: Validate verification token
+idp -> idp: Mark user as verified
+idp --> customer: Redirect to verified confirmation page
+end box
+
+box "Phase 3: User Authentication" #LightYellow
+customer -> webapp: Navigate to login form
+webapp -> webapp: Display login form
+customer -> webapp: Submit login credentials
+webapp -> idp: Authentication request
+idp -> idp: Validate credentials
+idp --> webapp: Return authentication token(s)
+webapp -> webapp: Store tokens (JWT) securely
+end box
+
+box "Phase 4: Accessing Protected Resources" #LightPink
+customer -> webapp: Request protected resource
+webapp -> gateway: Request with auth token
+gateway -> gateway: Validate token with IdP
+gateway -> usersvc: Forward authenticated request
+usersvc --> gateway: Return protected resource
+gateway --> webapp: Return protected resource
+webapp --> customer: Display protected resource
+end box
+@enduml

@@ -1,0 +1,82 @@
+@startuml shipping-delivery-management-use-case
+' Fix for clipping issues with comprehensive diagrams
+skinparam Rankdir top-to-bottom
+skinparam dpi 150
+skinparam pageMargin 10
+skinparam pageExternalColor white
+scale max 2000 width
+
+' Basic styling
+skinparam ActorStyle awesome
+skinparam ArrowColor #444444
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam Handwritten false
+skinparam UsecaseBorderThickness 1
+skinparam UsecaseFontSize 12
+skinparam ActorFontSize 14
+
+title Shipping & Delivery Management Use Cases
+
+left to right direction
+
+actor "Administrator" as Admin
+actor "Warehouse Staff" as Staff
+actor "System"
+actor "Shipping Service" as ShipSvc <<external>>
+actor "Customer" as Cust
+
+rectangle "Shipping & Delivery System" {
+  usecase "Process New Orders for Shipment" as UC_ProcessNewOrders
+  usecase "Pick and Pack Items" as UC_PickPack
+  usecase "Generate Shipping Label" as UC_GenLabel
+  usecase "Schedule Pickup" as UC_SchedulePickup
+  usecase "Handover to Shipping Service" as UC_Handover
+  usecase "Update Order Status to Shipped" as UC_UpdateShippedStatus
+  usecase "Receive Tracking Information" as UC_ReceiveTracking
+  usecase "Provide Tracking to Customer" as UC_ProvideTracking
+  usecase "Track Shipment Progress" as UC_TrackShipment
+  usecase "Manage Shipping Options" as UC_ManageShipOptions
+  usecase "Handle Shipping Issues" as UC_HandleShipIssues
+  usecase "Confirm Delivery" as UC_ConfirmDelivery
+  usecase "Update Order Status to Delivered" as UC_UpdateDeliveredStatus
+  usecase "Manage Shipping Zones & Rates" as UC_ManageZonesRates
+
+  ' --- Administrator to Use Case Relationships ---
+  Admin -- UC_ManageShipOptions
+  Admin -- UC_HandleShipIssues
+  Admin -- UC_ManageZonesRates
+  Admin -- UC_ProcessNewOrders
+
+  ' --- Warehouse Staff to Use Case Relationships ---
+  Staff -- UC_ProcessNewOrders
+  UC_ProcessNewOrders .> UC_PickPack : <<include>>
+  UC_PickPack .> UC_GenLabel : <<include>>
+  UC_GenLabel .> UC_SchedulePickup : <<include>>
+  UC_SchedulePickup .> UC_Handover : <<include>>
+  Staff -- UC_Handover
+
+  ' --- System to Use Case Relationships ---
+  System -- UC_UpdateShippedStatus
+  UC_Handover .> UC_UpdateShippedStatus : <<include>>
+  System -- UC_ReceiveTracking
+  System -- UC_ProvideTracking
+  UC_ReceiveTracking .> UC_ProvideTracking : <<include>>
+  System -- UC_ConfirmDelivery
+  System -- UC_UpdateDeliveredStatus
+  UC_ConfirmDelivery .> UC_UpdateDeliveredStatus : <<include>>
+
+  ' --- Customer to Use Case Relationships ---
+  Cust -- UC_TrackShipment
+  UC_ProvideTracking .> UC_TrackShipment : <<extend>>
+
+  ' --- External Actor Interactions ---
+  UC_GenLabel -- ShipSvc : (Get Label Data)
+  UC_SchedulePickup -- ShipSvc
+  UC_Handover -- ShipSvc
+  UC_ReceiveTracking -- ShipSvc : (Via API/Webhook)
+  UC_TrackShipment -- ShipSvc : (Via API/Tracking Page)
+  UC_ConfirmDelivery -- ShipSvc : (Delivery Confirmation Feed)
+
+}
+@enduml

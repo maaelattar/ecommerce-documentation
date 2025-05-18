@@ -1,0 +1,79 @@
+@startuml shopping-cart-management-use-case
+' Fix for clipping issues with comprehensive diagrams
+skinparam Rankdir top-to-bottom
+skinparam dpi 150
+skinparam pageMargin 10
+skinparam pageExternalColor white
+scale max 2000 width
+
+' Basic styling
+skinparam ActorStyle awesome
+skinparam ArrowColor #444444
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam Handwritten false
+skinparam UsecaseBorderThickness 1
+skinparam UsecaseFontSize 12
+skinparam ActorFontSize 14
+
+title Shopping Cart Management Use Cases
+
+left to right direction
+
+actor "Customer" as Cust
+actor "Guest Customer" as GuestCust
+actor "Registered Customer" as RegCust
+actor "System"
+
+GuestCust --|> Cust
+RegCust --|> Cust
+
+rectangle "Shopping Cart System" {
+  usecase "Add Item to Cart" as UC_AddItem
+  usecase "View Cart Contents" as UC_ViewCart
+  usecase "Update Item Quantity" as UC_UpdateQty
+  usecase "Remove Item from Cart" as UC_RemoveItem
+  usecase "Empty Cart" as UC_EmptyCart
+  usecase "Save Cart for Later" as UC_SaveCart
+  note right of UC_SaveCart: RegUser only
+  usecase "Load Saved Cart" as UC_LoadCart
+  note right of UC_LoadCart: RegUser only
+  usecase "Proceed to Checkout" as UC_ProceedToCheckout
+  usecase "Recalculate Cart Total" as UC_RecalcTotal
+  usecase "Check Item Availability" as UC_CheckAvailability
+  usecase "Merge Guest Cart with User Account" as UC_MergeCart
+  note right of UC_MergeCart: Upon Login
+  usecase "Persist Cart Across Sessions" as UC_PersistCart
+  note right of UC_PersistCart: RegUser
+  usecase "Notify Cart Abandonment" as UC_NotifyAbandon
+
+  ' --- Customer to Use Case Relationships ---
+  Cust -- UC_AddItem
+  UC_AddItem .> UC_CheckAvailability : <<include>>
+  UC_AddItem .> UC_RecalcTotal : <<include>>
+  Cust -- UC_ViewCart
+  Cust -- UC_UpdateQty
+  UC_UpdateQty .> UC_RecalcTotal : <<include>>
+  Cust -- UC_RemoveItem
+  UC_RemoveItem .> UC_RecalcTotal : <<include>>
+  Cust -- UC_EmptyCart
+  UC_EmptyCart .> UC_RecalcTotal : <<include>>
+  Cust -- UC_ProceedToCheckout
+
+  ' --- Registered Customer Specific ---
+  RegCust -- UC_SaveCart
+  RegCust -- UC_LoadCart
+  RegCust -- UC_PersistCart
+
+  ' --- System to Use Case Relationships ---
+  System -- UC_RecalcTotal
+  System -- UC_CheckAvailability
+  System -- UC_MergeCart
+  UC_AddItem .> UC_MergeCart : <<extend>> ' If guest logs in after adding items
+  System -- UC_PersistCart
+  System -- UC_NotifyAbandon
+  UC_ViewCart .> UC_NotifyAbandon : <<extend>> ' If cart inactive
+
+}
+
+@enduml

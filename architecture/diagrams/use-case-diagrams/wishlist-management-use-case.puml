@@ -1,0 +1,56 @@
+@startuml wishlist-management-use-case
+' Fix for clipping issues with comprehensive diagrams
+skinparam Rankdir top-to-bottom
+skinparam dpi 150
+skinparam pageMargin 10
+skinparam pageExternalColor white
+scale max 2000 width
+
+' Basic styling
+skinparam ActorStyle awesome
+skinparam ArrowColor #444444
+skinparam shadowing false
+skinparam defaultTextAlignment center
+skinparam Handwritten false
+skinparam UsecaseBorderThickness 1
+skinparam UsecaseFontSize 12
+skinparam ActorFontSize 14
+
+title Wishlist Management Use Cases
+
+left to right direction
+
+actor "Registered Customer" as RegUser
+actor "System"
+
+rectangle "Wishlist System" {
+  usecase "Add Item to Wishlist" as UC_AddToWishlist
+  usecase "View Wishlist" as UC_ViewWishlist
+  usecase "Remove Item from Wishlist" as UC_RemoveFromWishlist
+  usecase "Move Item from Wishlist to Cart" as UC_MoveToCart
+  usecase "Share Wishlist" as UC_ShareWishlist
+  note right of UC_ShareWishlist: Optional Feature
+  usecase "Set Item Priority in Wishlist" as UC_SetPriority
+  note right of UC_SetPriority: Optional Feature
+  usecase "Receive Wishlist Item Back in Stock Alert" as UC_BackInStockAlert
+  usecase "Check Item Availability from Wishlist" as UC_CheckAvailabilityWishlist
+
+  ' --- Registered Customer to Use Case Relationships ---
+  RegUser -- UC_AddToWishlist
+  UC_AddToWishlist .> UC_CheckAvailabilityWishlist : <<include>>
+  RegUser -- UC_ViewWishlist
+  RegUser -- UC_RemoveFromWishlist
+  RegUser -- UC_MoveToCart
+  UC_MoveToCart .> UC_CheckAvailabilityWishlist : <<include>>
+  RegUser -- UC_ShareWishlist
+  RegUser -- UC_SetPriority
+  RegUser -- UC_BackInStockAlert
+
+  ' --- System to Use Case Relationships ---
+  System -- UC_CheckAvailabilityWishlist
+  System -- UC_BackInStockAlert
+  UC_CheckAvailabilityWishlist .> UC_BackInStockAlert : <<extend>> ' If item is out of stock and user wants notification
+
+}
+
+@enduml

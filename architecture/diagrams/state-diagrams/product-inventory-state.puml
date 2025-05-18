@@ -1,0 +1,81 @@
+@startuml product-inventory-state
+' Fix for clipping issues with comprehensive diagrams
+!pragma layout smetana
+' Using lower DPI will help prevent clipping
+skinparam dpi 150
+' Set page dimensions explicitly
+skinparam pageMargin 10
+skinparam pageExternalColor white
+' Use a scale factor that prevents clipping but keeps detail
+scale max 2000 width
+
+' Basic styling
+skinparam StateFontSize 14
+skinparam StateFontStyle bold
+skinparam StateBackgroundColor WhiteSmoke
+skinparam StateAttributeFontSize 12
+skinparam ArrowFontSize 12
+skinparam ArrowColor #444444
+skinparam shadowing false
+
+title Product Inventory State Diagram
+
+[*] --> DRAFT : Create new product
+
+state DRAFT {
+    [*] --> BASIC_INFO
+    BASIC_INFO --> IMAGES_ADDED : Add product images
+    IMAGES_ADDED --> DETAILS_ADDED : Add specifications
+    DETAILS_ADDED --> PRICING_ADDED : Set pricing info
+    PRICING_ADDED --> CATEGORIZED : Add to categories
+    CATEGORIZED --> READY_FOR_REVIEW : Complete all fields
+    READY_FOR_REVIEW : All required product details provided
+}
+
+DRAFT --> PENDING_APPROVAL : Submit for review
+
+state PENDING_APPROVAL {
+    [*] --> REVIEW_QUEUED
+    REVIEW_QUEUED --> UNDER_REVIEW
+    UNDER_REVIEW --> REVISION_REQUIRED : Issues found
+    UNDER_REVIEW --> APPROVED : Passed review
+    REVISION_REQUIRED : Changes needed before approval
+}
+
+PENDING_APPROVAL --> DRAFT : Rejected
+PENDING_APPROVAL --> APPROVED : Passed review
+
+state APPROVED {
+    [*] --> INACTIVE : Not yet active
+    INACTIVE --> ACTIVE : Activate product
+    
+    state ACTIVE {
+        [*] --> IN_STOCK
+        IN_STOCK --> LOW_STOCK : Below threshold quantity
+        LOW_STOCK --> OUT_OF_STOCK : Zero quantity
+        OUT_OF_STOCK --> IN_STOCK : Restocked
+        OUT_OF_STOCK --> BACKORDERED : Accept orders despite no stock
+        BACKORDERED --> IN_STOCK : Restocked
+        IN_STOCK : Product available for purchase
+        LOW_STOCK : Limited availability
+        OUT_OF_STOCK : Temporarily unavailable
+        BACKORDERED : Available with delayed shipping
+    }
+    
+    ACTIVE --> INACTIVE : Deactivate product
+    ACTIVE --> ON_SALE : Apply discount
+    ON_SALE --> ACTIVE : Sale period ends
+}
+
+APPROVED --> DISCONTINUED : End of lifecycle
+
+state DISCONTINUED {
+    [*] --> CLEARANCE
+    CLEARANCE --> SOLD_OUT : All inventory sold
+    SOLD_OUT --> ARCHIVED : Product archived
+}
+
+DISCONTINUED --> ARCHIVED : Product removed from catalog
+ARCHIVED --> [*]
+
+@enduml

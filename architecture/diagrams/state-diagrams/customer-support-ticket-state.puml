@@ -1,0 +1,129 @@
+@startuml customer-support-ticket-state
+' Fix for clipping issues with comprehensive diagrams
+!pragma layout smetana
+' Using lower DPI will help prevent clipping
+skinparam dpi 150
+' Set page dimensions explicitly
+skinparam pageMargin 10
+skinparam pageExternalColor white
+' Use a scale factor that prevents clipping but keeps detail
+scale max 2000 width
+
+' Basic styling
+skinparam StateFontSize 14
+skinparam StateFontStyle bold
+skinparam StateBackgroundColor WhiteSmoke
+skinparam StateAttributeFontSize 12
+skinparam ArrowFontSize 12
+skinparam ArrowColor #444444
+skinparam shadowing false
+
+title Customer Support Ticket State Diagram
+
+[*] --> CREATED : Customer submits inquiry
+
+state CREATED {
+    [*] --> NEW_TICKET
+    NEW_TICKET --> AUTO_CATEGORIZED : System categorizes
+    
+    state AUTO_CATEGORIZED {
+        [*] --> ORDER_ISSUE
+        [*] --> PRODUCT_QUESTION
+        [*] --> RETURN_REQUEST
+        [*] --> ACCOUNT_ISSUE
+        [*] --> TECHNICAL_PROBLEM
+        [*] --> OTHER
+    }
+    
+    AUTO_CATEGORIZED --> PRIORITY_ASSIGNED : System sets priority
+    
+    state PRIORITY_ASSIGNED {
+        [*] --> LOW
+        [*] --> MEDIUM
+        [*] --> HIGH
+        [*] --> URGENT
+    }
+}
+
+CREATED --> AUTO_RESPONSE_SENT : Automated acknowledgment
+
+state AUTO_RESPONSE_SENT {
+    [*] --> SELF_HELP_SUGGESTED
+    SELF_HELP_SUGGESTED --> AWAITING_CUSTOMER_FEEDBACK : Check if self-help resolved
+    AWAITING_CUSTOMER_FEEDBACK --> RESOLVED_AUTOMATICALLY : Self-help successful
+    AWAITING_CUSTOMER_FEEDBACK --> NEEDS_AGENT : Self-help failed
+}
+
+AUTO_RESPONSE_SENT --> PENDING : Awaiting agent assignment
+
+state PENDING {
+    [*] --> IN_QUEUE
+    IN_QUEUE --> ASSIGNED : Ticket assigned to agent
+    
+    state ASSIGNED {
+        [*] --> AGENT_REVIEWING
+        AGENT_REVIEWING --> ADDITIONAL_INFO_NEEDED : More info required
+        ADDITIONAL_INFO_NEEDED --> WAITING_FOR_CUSTOMER : Info request sent
+        WAITING_FOR_CUSTOMER --> CUSTOMER_RESPONDED : Customer provides info
+        WAITING_FOR_CUSTOMER --> REMINDER_SENT : No response for 24h
+        REMINDER_SENT --> CUSTOMER_RESPONDED : Customer responds
+        REMINDER_SENT --> FINAL_NOTICE_SENT : No response for 72h
+        FINAL_NOTICE_SENT --> AUTO_CLOSED : No response after final notice
+        CUSTOMER_RESPONDED --> AGENT_REVIEWING : Review new information
+    }
+}
+
+PENDING --> IN_PROGRESS : Agent actively working
+
+state IN_PROGRESS {
+    [*] --> INVESTIGATING
+    INVESTIGATING --> SOLUTION_IDENTIFIED : Agent determines solution
+    SOLUTION_IDENTIFIED --> SOLUTION_PROPOSED : Agent responds to customer
+    SOLUTION_PROPOSED --> WAITING_CUSTOMER_CONFIRMATION : Pending customer approval
+    WAITING_CUSTOMER_CONFIRMATION --> SOLUTION_ACCEPTED : Customer accepts
+    WAITING_CUSTOMER_CONFIRMATION --> SOLUTION_REJECTED : Customer rejects
+    SOLUTION_REJECTED --> INVESTIGATING : Restart investigation
+}
+
+IN_PROGRESS --> ESCALATED : Agent escalates to specialist
+
+state ESCALATED {
+    [*] --> SPECIALIST_QUEUE
+    SPECIALIST_QUEUE --> SPECIALIST_ASSIGNED
+    SPECIALIST_ASSIGNED --> SPECIALIST_REVIEWING
+    SPECIALIST_REVIEWING --> SPECIALIST_SOLUTION_IDENTIFIED
+    SPECIALIST_SOLUTION_IDENTIFIED --> SPECIALIST_RESPONDING
+}
+
+ESCALATED --> IN_PROGRESS : Returned to original agent
+IN_PROGRESS --> ON_HOLD : Waiting on external process
+
+state ON_HOLD {
+    [*] --> WAITING_THIRD_PARTY
+    [*] --> WAITING_SHIPPING_RESOLUTION
+    [*] --> WAITING_REFUND_PROCESSING
+    
+    WAITING_THIRD_PARTY : External vendor involved
+    WAITING_SHIPPING_RESOLUTION : Carrier investigation
+    WAITING_REFUND_PROCESSING : Payment processor delay
+}
+
+ON_HOLD --> IN_PROGRESS : External process complete
+IN_PROGRESS --> RESOLVED : Solution implemented
+
+state RESOLVED {
+    [*] --> RESOLUTION_IMPLEMENTED
+    RESOLUTION_IMPLEMENTED --> FOLLOW_UP_SCHEDULED : Check if resolved
+    FOLLOW_UP_SCHEDULED --> SATISFACTION_SURVEY_SENT : Survey sent to customer
+    SATISFACTION_SURVEY_SENT --> SURVEY_COMPLETED : Customer provides feedback
+    SURVEY_COMPLETED --> SATISFACTION_RATED : Satisfaction scored
+}
+
+RESOLVED --> REOPENED : Customer reports issue not resolved
+REOPENED --> IN_PROGRESS : Ticket reactivated
+RESOLVED --> CLOSED : Ticket formally closed
+CLOSED --> [*]
+AUTO_CLOSED --> [*]
+RESOLVED_AUTOMATICALLY --> [*]
+
+@enduml

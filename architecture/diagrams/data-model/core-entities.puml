@@ -1,0 +1,272 @@
+@startuml Core E-commerce Entities
+' Core Entity-Relationship Diagram for E-commerce Platform
+
+title Core E-commerce Domain Entities
+
+' User Domain
+package "User Domain" {
+  entity "User" as user {
+    * id : UUID
+    * email : string
+    * password_hash : string
+    * name : string
+    * status : enum
+    * created_at : datetime
+    * updated_at : datetime
+  }
+  
+  entity "Address" as address {
+    * id : UUID
+    * user_id : UUID
+    * type : enum (SHIPPING, BILLING)
+    * street : string
+    * city : string
+    * state : string
+    * country : string
+    * postal_code : string
+    * is_default : boolean
+  }
+  
+  entity "UserPreference" as preference {
+    * id : UUID
+    * user_id : UUID
+    * preference_key : string
+    * preference_value : string
+  }
+}
+
+' Product Domain
+package "Product Domain" {
+  entity "Category" as category {
+    * id : UUID
+    * name : string
+    * description : text
+    * parent_id : UUID
+    * level : int
+    * is_active : boolean
+  }
+  
+  entity "Product" as product {
+    * id : UUID
+    * name : string
+    * description : text
+    * price : decimal
+    * status : enum
+    * created_at : datetime
+    * updated_at : datetime
+  }
+  
+  entity "ProductVariant" as variant {
+    * id : UUID
+    * product_id : UUID
+    * sku : string
+    * price : decimal
+    * is_default : boolean
+  }
+  
+  entity "ProductAttribute" as attribute {
+    * id : UUID
+    * name : string
+    * type : enum
+  }
+  
+  entity "ProductAttributeValue" as attr_value {
+    * id : UUID
+    * attribute_id : UUID
+    * variant_id : UUID
+    * value : string
+  }
+  
+  entity "ProductImage" as image {
+    * id : UUID
+    * product_id : UUID
+    * variant_id : UUID
+    * url : string
+    * alt_text : string
+    * sort_order : int
+  }
+  
+  entity "ProductReview" as review {
+    * id : UUID
+    * product_id : UUID
+    * user_id : UUID
+    * rating : int
+    * title : string
+    * content : text
+    * status : enum
+    * created_at : datetime
+  }
+}
+
+' Inventory Domain
+package "Inventory Domain" {
+  entity "Inventory" as inventory {
+    * id : UUID
+    * product_variant_id : UUID
+    * quantity : int
+    * reserved : int
+    * available : int
+    * updated_at : datetime
+  }
+  
+  entity "InventoryTransaction" as inv_transaction {
+    * id : UUID
+    * inventory_id : UUID
+    * quantity : int
+    * type : enum (STOCK_IN, STOCK_OUT, RESERVE, RELEASE)
+    * reference_id : UUID
+    * reference_type : string
+    * created_at : datetime
+  }
+}
+
+' Order Domain
+package "Order Domain" {
+  entity "Cart" as cart {
+    * id : UUID
+    * user_id : UUID
+    * created_at : datetime
+    * updated_at : datetime
+  }
+  
+  entity "CartItem" as cart_item {
+    * id : UUID
+    * cart_id : UUID
+    * product_variant_id : UUID
+    * quantity : int
+    * price : decimal
+  }
+  
+  entity "Order" as order {
+    * id : UUID
+    * user_id : UUID
+    * status : enum
+    * total : decimal
+    * subtotal : decimal
+    * tax : decimal
+    * shipping : decimal
+    * discount : decimal
+    * shipping_address_id : UUID
+    * billing_address_id : UUID
+    * created_at : datetime
+    * updated_at : datetime
+  }
+  
+  entity "OrderItem" as order_item {
+    * id : UUID
+    * order_id : UUID
+    * product_variant_id : UUID
+    * quantity : int
+    * price : decimal
+    * subtotal : decimal
+    * discount : decimal
+  }
+}
+
+' Payment Domain
+package "Payment Domain" {
+  entity "Payment" as payment {
+    * id : UUID
+    * order_id : UUID
+    * amount : decimal
+    * status : enum
+    * provider : string
+    * transaction_id : string
+    * created_at : datetime
+    * updated_at : datetime
+  }
+  
+  entity "Refund" as refund {
+    * id : UUID
+    * payment_id : UUID
+    * amount : decimal
+    * status : enum
+    * reason : string
+    * created_at : datetime
+  }
+}
+
+' Shipping Domain
+package "Shipping Domain" {
+  entity "Shipment" as shipment {
+    * id : UUID
+    * order_id : UUID
+    * status : enum
+    * tracking_number : string
+    * carrier : string
+    * shipping_method : string
+    * created_at : datetime
+    * updated_at : datetime
+  }
+  
+  entity "ShipmentItem" as shipment_item {
+    * id : UUID
+    * shipment_id : UUID
+    * order_item_id : UUID
+    * quantity : int
+  }
+}
+
+' Promotion Domain
+package "Promotion Domain" {
+  entity "Promotion" as promotion {
+    * id : UUID
+    * name : string
+    * description : text
+    * discount_type : enum
+    * discount_value : decimal
+    * start_date : datetime
+    * end_date : datetime
+    * is_active : boolean
+  }
+  
+  entity "Coupon" as coupon {
+    * id : UUID
+    * promotion_id : UUID
+    * code : string
+    * usage_limit : int
+    * usage_count : int
+    * is_active : boolean
+  }
+}
+
+' Relationships
+' User Domain Relationships
+user ||--o{ address : has
+user ||--o{ preference : has
+
+' Product Domain Relationships
+category ||--o{ product : categorized_in
+category ||--o{ category : has_subcategory
+product ||--o{ variant : has
+product ||--o{ image : has
+product ||--o{ review : has
+variant ||--o{ attr_value : has
+attribute ||--o{ attr_value : defines
+
+' Inventory Domain Relationships
+variant ||--|| inventory : tracks
+inventory ||--o{ inv_transaction : records
+
+' Order Domain Relationships
+user ||--o{ cart : has
+cart ||--o{ cart_item : contains
+variant ||--o{ cart_item : added_to
+user ||--o{ order : places
+order ||--o{ order_item : contains
+variant ||--o{ order_item : ordered_in
+
+' Payment Domain Relationships
+order ||--o{ payment : has
+payment ||--o{ refund : has
+
+' Shipping Domain Relationships
+order ||--o{ shipment : has
+shipment ||--o{ shipment_item : contains
+order_item ||--o{ shipment_item : fulfilled_by
+
+' Promotion Domain Relationships
+promotion ||--o{ coupon : has
+order }o--o{ promotion : applies
+
+@enduml

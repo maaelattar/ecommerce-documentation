@@ -1,0 +1,145 @@
+@startuml wishlist-state
+' Fix for clipping issues with comprehensive diagrams
+!pragma layout smetana
+' Using lower DPI will help prevent clipping
+skinparam dpi 150
+' Set page dimensions explicitly
+skinparam pageMargin 10
+skinparam pageExternalColor white
+' Use a scale factor that prevents clipping but keeps detail
+scale max 2000 width
+
+' Basic styling
+skinparam StateFontSize 14
+skinparam StateFontStyle bold
+skinparam StateBackgroundColor WhiteSmoke
+skinparam StateAttributeFontSize 12
+skinparam ArrowFontSize 12
+skinparam ArrowColor #444444
+skinparam shadowing false
+
+title Wishlist State Diagram
+
+[*] --> INITIALIZED : User creates wishlist
+
+state INITIALIZED {
+    [*] --> EMPTY
+    EMPTY --> FIRST_ITEM_ADDED : First item saved
+    
+    EMPTY : No items in wishlist
+    FIRST_ITEM_ADDED : Initial item added
+}
+
+INITIALIZED --> ACTIVE : Wishlist in use
+
+state ACTIVE {
+    [*] --> DEFAULT_WISHLIST
+    [*] --> NAMED_WISHLIST
+    
+    DEFAULT_WISHLIST : System default wishlist
+    NAMED_WISHLIST : User-named custom wishlist
+    
+    DEFAULT_WISHLIST --> ITEMS_ADDED : Products added
+    NAMED_WISHLIST --> ITEMS_ADDED : Products added
+    
+    state ITEMS_ADDED {
+        [*] --> SINGLE_ITEM_LIST
+        SINGLE_ITEM_LIST --> MULTI_ITEM_LIST : More items added
+        MULTI_ITEM_LIST --> SINGLE_ITEM_LIST : Items removed
+        
+        SINGLE_ITEM_LIST : One saved item
+        MULTI_ITEM_LIST : Multiple saved items
+    }
+}
+
+ACTIVE --> MODIFIED : User updates wishlist
+
+state MODIFIED {
+    [*] --> ITEM_ADDED
+    [*] --> ITEM_REMOVED
+    [*] --> ITEM_MOVED
+    [*] --> NOTES_ADDED
+    
+    ITEM_ADDED : New product added
+    ITEM_REMOVED : Product removed
+    ITEM_MOVED : Item moved between wishlists
+    NOTES_ADDED : Comments added to items
+}
+
+MODIFIED --> ACTIVE : Modifications complete
+ACTIVE --> NOTIFICATION_STATE : System updates
+
+state NOTIFICATION_STATE {
+    [*] --> PRICE_CHANGED
+    [*] --> BACK_IN_STOCK
+    [*] --> LOW_STOCK
+    [*] --> PRICE_DROP
+    
+    PRICE_CHANGED : Item price updated
+    BACK_IN_STOCK : Previously OOS item available
+    LOW_STOCK : Item becoming limited
+    PRICE_DROP : Significant price reduction
+    
+    PRICE_CHANGED --> NOTIFICATION_SENT : Alert user
+    BACK_IN_STOCK --> NOTIFICATION_SENT : Alert user
+    LOW_STOCK --> NOTIFICATION_SENT : Alert user
+    PRICE_DROP --> NOTIFICATION_SENT : Alert user
+}
+
+NOTIFICATION_STATE --> ACTIVE : Return to normal state
+ACTIVE --> SHARED : User shares wishlist
+
+state SHARED {
+    [*] --> LINK_GENERATED
+    LINK_GENERATED --> PERMISSIONS_SET : Access controls set
+    
+    state PERMISSIONS_SET {
+        [*] --> PUBLIC
+        [*] --> FRIENDS_ONLY
+        [*] --> SPECIFIC_EMAILS
+        
+        PUBLIC : Anyone can view
+        FRIENDS_ONLY : Account connections only
+        SPECIFIC_EMAILS : Selected recipients only
+    }
+    
+    PERMISSIONS_SET --> SHARING_METHOD_SELECTED : Choose sharing method
+    
+    state SHARING_METHOD_SELECTED {
+        [*] --> EMAIL_SHARE
+        [*] --> SOCIAL_MEDIA_SHARE
+        [*] --> COPY_LINK
+        
+        EMAIL_SHARE : Sent via email
+        SOCIAL_MEDIA_SHARE : Posted to social platform
+        COPY_LINK : Link copied to clipboard
+    }
+}
+
+SHARED --> CONVERTED_TO_GIFT_REGISTRY : Upgrade to gift registry
+SHARED --> ACTIVE : Return to normal state
+ACTIVE --> CONVERTED_TO_CART : Items moved to cart
+
+state CONVERTED_TO_CART {
+    [*] --> PARTIAL_CONVERSION
+    [*] --> COMPLETE_CONVERSION
+    
+    PARTIAL_CONVERSION : Some items moved to cart
+    COMPLETE_CONVERSION : All items moved to cart
+}
+
+CONVERTED_TO_CART --> ACTIVE : Items remain in wishlist too
+ACTIVE --> DORMANT : No activity for 90+ days
+
+state DORMANT {
+    [*] --> REMINDER_SENT
+    REMINDER_SENT --> REACTIVATED : User returns
+    REMINDER_SENT --> LONG_TERM_DORMANT : Still no activity
+    LONG_TERM_DORMANT : No activity for 180+ days
+}
+
+DORMANT --> ACTIVE : User returns to wishlist
+DORMANT --> ARCHIVED : No activity for 1+ year
+ARCHIVED --> [*]
+
+@enduml

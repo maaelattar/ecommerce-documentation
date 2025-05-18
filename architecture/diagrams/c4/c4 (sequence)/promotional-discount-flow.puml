@@ -1,0 +1,88 @@
+@startuml
+!theme plain
+scale 0.7
+skinparam dpi 300
+skinparam maxMessageSize 150
+skinparam responseMessageBelowArrow true
+skinparam SequenceMessageAlignment center
+skinparam SequenceGroupBodyBackgroundColor transparent
+skinparam SequenceLifeLineBorderColor Grey
+skinparam SequenceArrowColor Black
+skinparam SequenceParticipantBackgroundColor WhiteSmoke
+skinparam SequenceActorBackgroundColor WhiteSmoke
+skinparam SequenceBoxBackgroundColor WhiteSmoke
+skinparam SequenceBoxBorderColor #A0A0A0
+skinparam ParticipantPadding 15
+skinparam Padding 2
+skinparam footbox false
+
+' Promotional/Discount Application Flow
+title Promotional and Discount Application Flow
+
+actor "Customer" as customer
+participant "Web\nApp" as webapp
+participant "API\nGateway" as gateway
+participant "Cart\nService" as cartsvc
+participant "Promotion\nService" as promosvc
+participant "Rules\nEngine" as rulesengine
+participant "Promo\nDB" as promodb
+participant "Customer\nService" as customersvc
+participant "Message\nBroker" as broker
+participant "Analytics\nService" as analytics
+actor "Admin" as admin
+participant "Admin\nPortal" as adminportal
+
+' Phase 1: Promotion Creation
+note over customer, analytics: Phase 1: Promotion Creation
+
+admin -> adminportal: Create new promotion
+adminportal -> gateway: POST /api/v1/admin/promotions
+gateway -> promosvc: Create promotion
+promosvc -> promosvc: Validate promotion rules
+promosvc -> promodb: Store promotion details
+promodb --> promosvc: Promotion saved
+promosvc -> broker: Publish PromotionCreated event
+broker -> analytics: PromotionCreated event
+promosvc --> gateway: Return promotion details
+gateway --> adminportal: Confirmation
+adminportal --> admin: Display confirmation
+
+' Phase 2: Automatic Discount Application
+note over customer, analytics: Phase 2: Automatic Discount Application
+
+customer -> webapp: View cart
+webapp -> gateway: GET /api/v1/cart
+gateway -> cartsvc: Retrieve cart
+cartsvc -> promosvc: Check applicable promotions
+promosvc -> customersvc: Get customer segment data
+customersvc --> promosvc: Customer data
+promosvc -> promodb: Query eligible promotions
+promodb --> promosvc: Eligible promotions list
+promosvc -> rulesengine: Evaluate promotion rules
+rulesengine --> promosvc: Applicable discounts
+promosvc --> cartsvc: Return applicable discounts
+cartsvc -> cartsvc: Apply discounts to cart
+cartsvc --> gateway: Return cart with discounts
+gateway --> webapp: Return updated cart
+webapp --> customer: Display discounted cart
+
+' Phase 3: Coupon Code Application
+note over customer, analytics: Phase 3: Coupon Code Application
+
+customer -> webapp: Enter coupon code
+webapp -> gateway: POST /api/v1/cart/apply-coupon
+gateway -> cartsvc: Apply coupon
+cartsvc -> promosvc: Validate coupon code
+promosvc -> promodb: Check coupon validity
+promodb --> promosvc: Coupon details
+promosvc -> rulesengine: Check coupon rules
+rulesengine --> promosvc: Coupon applicable/not
+promosvc --> cartsvc: Return coupon discount
+cartsvc -> cartsvc: Apply coupon to cart
+cartsvc -> broker: Publish CouponApplied event
+broker -> analytics: CouponApplied event
+cartsvc --> gateway: Return updated cart
+gateway --> webapp: Return updated cart
+webapp --> customer: Display updated cart with coupon
+
+@enduml

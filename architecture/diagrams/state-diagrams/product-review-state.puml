@@ -1,0 +1,143 @@
+@startuml product-review-state
+' Fix for clipping issues with comprehensive diagrams
+!pragma layout smetana
+' Using lower DPI will help prevent clipping
+skinparam dpi 150
+' Set page dimensions explicitly
+skinparam pageMargin 10
+skinparam pageExternalColor white
+' Use a scale factor that prevents clipping but keeps detail
+scale max 2000 width
+
+' Basic styling
+skinparam StateFontSize 14
+skinparam StateFontStyle bold
+skinparam StateBackgroundColor WhiteSmoke
+skinparam StateAttributeFontSize 12
+skinparam ArrowFontSize 12
+skinparam ArrowColor #444444
+skinparam shadowing false
+
+title Product Review State Diagram
+
+[*] --> INITIATED : Customer invited to review
+
+state INITIATED {
+    [*] --> REVIEW_REQUESTED
+    REVIEW_REQUESTED --> EMAIL_SENT : Send review request
+    EMAIL_SENT --> REMINDER_SENT : No response in 7 days
+    REMINDER_SENT --> FINAL_REMINDER : No response in 14 days
+    
+    REVIEW_REQUESTED : After purchase/delivery
+    EMAIL_SENT : Initial invitation
+    REMINDER_SENT : First follow-up
+    FINAL_REMINDER : Last reminder
+}
+
+INITIATED --> DRAFT : Customer begins review
+
+state DRAFT {
+    [*] --> RATING_ADDED
+    RATING_ADDED --> TEXT_ADDED : Written review added
+    TEXT_ADDED --> MEDIA_ADDED : Photos/videos added
+    MEDIA_ADDED --> DETAILS_ADDED : Usage details added
+    
+    RATING_ADDED : Star rating given
+    TEXT_ADDED : Written feedback
+    MEDIA_ADDED : Visual content
+    DETAILS_ADDED : Usage experience info
+}
+
+DRAFT --> ABANDONED : Review started but not submitted
+ABANDONED --> DRAFT : Customer returns to complete
+ABANDONED --> EXPIRED : 30+ days of inactivity
+DRAFT --> SUBMITTED : Review completed and submitted
+
+state SUBMITTED {
+    [*] --> AWAITING_MODERATION
+    AWAITING_MODERATION : In queue for review
+}
+
+SUBMITTED --> UNDER_MODERATION : Moderator reviewing
+
+state UNDER_MODERATION {
+    [*] --> AUTOMATED_SCREENING
+    AUTOMATED_SCREENING --> FLAGGED : Potential issues detected
+    AUTOMATED_SCREENING --> HUMAN_REVIEW : Passes auto-check
+    
+    state FLAGGED {
+        [*] --> PROFANITY_DETECTED
+        [*] --> IRRELEVANT_CONTENT
+        [*] --> SPAM_SUSPECTED
+        [*] --> COMPETITOR_MENTION
+        
+        PROFANITY_DETECTED : Inappropriate language
+        IRRELEVANT_CONTENT : Off-topic
+        SPAM_SUSPECTED : Promotional content
+        COMPETITOR_MENTION : Mentions competitors
+    }
+    
+    FLAGGED --> HUMAN_REVIEW : Manual check needed
+    HUMAN_REVIEW --> MODIFICATION_REQUESTED : Changes needed
+    HUMAN_REVIEW --> APPROVED : Passes moderation
+    HUMAN_REVIEW --> REJECTED : Violates policies
+}
+
+MODIFICATION_REQUESTED --> CUSTOMER_EDITING : Customer notified
+CUSTOMER_EDITING --> RESUBMITTED : Updated review submitted
+RESUBMITTED --> UNDER_MODERATION : Review again
+UNDER_MODERATION --> REJECTED : Fails moderation standards
+
+state REJECTED {
+    [*] --> POLICY_VIOLATION
+    [*] --> FAKE_REVIEW_SUSPECTED
+    [*] --> DUPLICATE_CONTENT
+    
+    POLICY_VIOLATION : Against terms of service
+    FAKE_REVIEW_SUSPECTED : Authenticity concerns
+    DUPLICATE_CONTENT : Repeated review
+}
+
+REJECTED --> CUSTOMER_NOTIFIED : Explain rejection reason
+CUSTOMER_NOTIFIED --> APPEAL_SUBMITTED : Customer appeals decision
+APPEAL_SUBMITTED --> UNDER_MODERATION : Reevaluate
+CUSTOMER_NOTIFIED --> [*] : No appeal, review rejected
+UNDER_MODERATION --> APPROVED : Passes moderation
+
+state APPROVED {
+    [*] --> VERIFIED_PURCHASE
+    [*] --> UNVERIFIED_PURCHASE
+    
+    VERIFIED_PURCHASE : Confirmed buyer
+    UNVERIFIED_PURCHASE : Not confirmed buyer
+    
+    VERIFIED_PURCHASE --> PUBLISHED : Posted with badge
+    UNVERIFIED_PURCHASE --> PUBLISHED : Posted without badge
+}
+
+APPROVED --> PUBLISHED : Review live on site
+
+state PUBLISHED {
+    [*] --> ACTIVE
+    ACTIVE --> HELPFUL_VOTES_ADDED : Users mark as helpful
+    ACTIVE --> UNHELPFUL_VOTES_ADDED : Users mark as unhelpful
+    ACTIVE --> FEATURED : Highlighted by system
+    ACTIVE --> COMMENT_ADDED : Others comment on review
+    
+    ACTIVE : Visible to all users
+    HELPFUL_VOTES_ADDED : Positive user feedback
+    FEATURED : Promoted review
+    COMMENT_ADDED : Discussion on review
+}
+
+PUBLISHED --> RESPONDED : Seller/manufacturer responds
+RESPONDED --> PUBLISHED : Response published
+PUBLISHED --> REPORTED : User flags review
+REPORTED --> UNDER_MODERATION : Re-review after report
+PUBLISHED --> UPDATED : Customer edits review
+UPDATED --> UNDER_MODERATION : Verify updated content
+PUBLISHED --> ARCHIVED : Older than threshold
+ARCHIVED --> [*]
+EXPIRED --> [*]
+
+@enduml
