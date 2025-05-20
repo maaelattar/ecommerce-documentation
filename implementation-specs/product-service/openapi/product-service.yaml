@@ -1,0 +1,966 @@
+openapi: 3.0.3
+info:
+  title: Product Service API
+  version: 1.0.0
+  description: API for managing products, categories, inventory, and pricing information.
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Local development server
+  - url: https://api.example.com/product-service/v1
+    description: Production server
+tags:
+  - name: Products
+    description: Product management
+  - name: Categories
+    description: Category management
+  - name: Inventory
+    description: Inventory management
+  - name: Pricing
+    description: Price and discount management
+paths:
+  /products:
+    get:
+      summary: List products
+      tags: [Products]
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            default: 1
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+        - in: query
+          name: sort
+          schema:
+            type: string
+            example: "name:asc"
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [draft, active, inactive, discontinued]
+        - in: query
+          name: brand
+          schema:
+            type: string
+        - in: query
+          name: categoryId
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: search
+          schema:
+            type: string
+      responses:
+        '200':
+          description: A list of products.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /products/{id}:
+    get:
+      summary: Get a product by ID
+      tags: [Products]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ID of the product to retrieve
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Product details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # Category API Paths
+  /categories:
+    get:
+      summary: List categories
+      tags: [Categories]
+      parameters:
+        - in: query
+          name: parentId
+          schema:
+            type: string
+            format: uuid
+          description: Filter by parent category ID. If not provided, root categories are returned.
+        - $ref: '#/components/parameters/PageQueryParam'
+        - $ref: '#/components/parameters/LimitQueryParam'
+        - $ref: '#/components/parameters/SortQueryParam'
+      responses:
+        '200':
+          description: A list of categories.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+    post:
+      summary: Create a new category
+      tags: [Categories]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryCreateRequest'
+      responses:
+        '201':
+          description: Category created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /categories/{id}:
+    get:
+      summary: Get a category by ID
+      tags: [Categories]
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '200':
+          description: Category details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      summary: Update a category
+      tags: [Categories]
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryUpdateRequest'
+      responses:
+        '200':
+          description: Category updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Category'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Delete a category
+      tags: [Categories]
+      parameters:
+        - $ref: '#/components/parameters/IdPathParam'
+      responses:
+        '204':
+          description: Category deleted successfully.
+        '400':
+          description: Bad Request (e.g., category has children and deletion is not allowed).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # Price API Paths
+  /products/{productVariantId}/price:
+    get:
+      summary: Get the price for a product variant
+      tags: [Pricing]
+      parameters:
+        - $ref: '#/components/parameters/ProductVariantIdPathParam' # Assuming ProductVariantId is distinct from general IdPathParam
+      responses:
+        '200':
+          description: Price details for the product variant.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductPrice'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      summary: Set or update the price for a product variant
+      tags: [Pricing]
+      parameters:
+        - $ref: '#/components/parameters/ProductVariantIdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetProductPriceRequest'
+      responses:
+        '200':
+          description: Price updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductPrice'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # Discount API Paths
+  /discounts:
+    get:
+      summary: List all discounts
+      tags: [Pricing]
+      parameters:
+        - $ref: '#/components/parameters/PageQueryParam'
+        - $ref: '#/components/parameters/LimitQueryParam'
+        - $ref: '#/components/parameters/SortQueryParam'
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [DRAFT, ACTIVE, PAUSED, EXPIRED]
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum: [PERCENTAGE, FIXED_AMOUNT, FREE_SHIPPING, BUY_X_GET_Y]
+      responses:
+        '200':
+          description: A list of discounts.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DiscountListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      summary: Create a new discount
+      tags: [Pricing]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiscountCreateRequest'
+      responses:
+        '201':
+          description: Discount created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Discount'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /discounts/{discountId}:
+    get:
+      summary: Get a discount by ID
+      tags: [Pricing]
+      parameters:
+        - $ref: '#/components/parameters/DiscountIdPathParam'
+      responses:
+        '200':
+          description: Discount details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Discount'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      summary: Update a discount
+      tags: [Pricing]
+      parameters:
+        - $ref: '#/components/parameters/DiscountIdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DiscountUpdateRequest'
+      responses:
+        '200':
+          description: Discount updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Discount'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Delete a discount
+      tags: [Pricing]
+      parameters:
+        - $ref: '#/components/parameters/DiscountIdPathParam'
+      responses:
+        '204':
+          description: Discount deleted successfully.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /products/{productVariantId}/discounts:
+    post:
+      summary: Apply a discount to a product variant
+      tags: [Pricing]
+      parameters:
+        - $ref: '#/components/parameters/ProductVariantIdPathParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ApplyDiscountRequest'
+      responses:
+        '200':
+          description: Discount applied successfully.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /products/{productVariantId}/discounts/{discountId}:
+    delete:
+      summary: Remove a discount from a product variant
+      tags: [Pricing]
+      parameters:
+        - $ref: '#/components/parameters/ProductVariantIdPathParam'
+        - $ref: '#/components/parameters/DiscountIdPathParam'
+      responses:
+        '204':
+          description: Discount removed successfully.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+components:
+  schemas:
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          example: "Awesome T-Shirt"
+        description:
+          type: string
+          example: "A really awesome t-shirt for coding."
+        brand:
+          type: string
+          example: "DevStyle"
+        categoryIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          example: ["uuid-category-1", "uuid-category-2"]
+        status:
+          type: string
+          enum: [draft, active, inactive, discontinued]
+          example: "active"
+        metadata:
+          type: object
+          additionalProperties: true
+          example: {"color": "blue", "size": "L"}
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+
+    ProductCreateRequest:
+      type: object
+      required:
+        - name
+        - categoryIds
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 1000
+        brand:
+          type: string
+          maxLength: 100
+        categoryIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+        status:
+          type: string
+          enum: [draft, active, inactive, discontinued]
+          default: "draft"
+        metadata:
+          type: object
+          additionalProperties: true
+
+    ProductUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 3
+          maxLength: 255
+        description:
+          type: string
+          maxLength: 1000
+        brand:
+          type: string
+          maxLength: 100
+        categoryIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+        status:
+          type: string
+          enum: [draft, active, inactive, discontinued]
+        metadata:
+          type: object
+          additionalProperties: true
+
+    ProductListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+        - message
+        - statusCode
+      properties:
+        error:
+          type: string
+          example: "ValidationError"
+        message:
+          type: string
+          example: "Input validation failed"
+        statusCode:
+          type: integer
+          example: 400
+        details:
+          type: object
+          additionalProperties: true
+          example: {"field_name": "Error description"}
+        correlationId:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          example: "Electronics"
+        description:
+          type: string
+          nullable: true
+          example: "All kinds of electronic gadgets."
+        parentId:
+          type: string
+          format: uuid
+          nullable: true
+          description: ID of the parent category. Null for root categories.
+          example: "uuid-parent-category"
+        level:
+          type: integer
+          readOnly: true
+          description: Hierarchy level of the category (root is 1).
+          example: 1
+        path:
+          type: string
+          readOnly: true
+          description: Materialized path for the category hierarchy.
+          example: "/uuid-root/uuid-child"
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category' # Recursive definition for children
+          readOnly: true
+          description: Direct child categories.
+        metadata:
+          type: object
+          additionalProperties: true
+          nullable: true
+          example: {"icon": "fa-bolt", "displayOrder": 1}
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+
+    CategoryCreateRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 1000
+          nullable: true
+        parentId:
+          type: string
+          format: uuid
+          nullable: true
+        metadata:
+          type: object
+          additionalProperties: true
+          nullable: true
+
+    CategoryUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 1000
+          nullable: true
+        parentId:
+          type: string
+          format: uuid
+          nullable: true # Note: Changing parentId can be a complex operation
+        metadata:
+          type: object
+          additionalProperties: true
+          nullable: true
+
+    CategoryListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+
+    ProductPrice: # Based on 02c-price-models.md
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        productVariantId: # Assuming this is how price is linked, adjust if direct product ID
+          type: string
+          # format: uuid (if variants use UUIDs)
+          readOnly: true
+        basePrice:
+          type: number
+          format: float # Using float for currency, consider string for precision
+          description: The standard price of the product variant.
+          example: 29.99
+        salePrice:
+          type: number
+          format: float
+          description: The discounted price, if applicable.
+          example: 24.99
+        msrp:
+          type: number
+          format: float
+          description: Manufacturer's Suggested Retail Price.
+          example: 35.00
+        currency:
+          type: string
+          description: ISO 4217 currency code.
+          example: "USD"
+        priceType:
+          type: string
+          enum: [REGULAR, SALE, CLEARANCE, PROMOTIONAL]
+          example: "REGULAR"
+        metadata:
+          type: object
+          additionalProperties: true
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+
+    SetProductPriceRequest:
+      type: object
+      required:
+        - basePrice
+        - salePrice
+        - msrp
+        - currency
+        - priceType
+      properties:
+        basePrice:
+          type: number
+          format: float
+          minimum: 0.01
+        salePrice:
+          type: number
+          format: float
+          minimum: 0.01
+        msrp:
+          type: number
+          format: float
+          minimum: 0.01
+        currency:
+          type: string
+          pattern: '^[A-Z]{3}$' # ISO 4217
+        priceType:
+          type: string
+          enum: [REGULAR, SALE, CLEARANCE, PROMOTIONAL]
+        metadata:
+          type: object
+          additionalProperties: true
+          nullable: true
+
+    Discount:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          example: "Summer Sale"
+        description:
+          type: string
+          nullable: true
+        type:
+          type: string
+          enum: [PERCENTAGE, FIXED_AMOUNT, FREE_SHIPPING, BUY_X_GET_Y]
+          example: "PERCENTAGE"
+        value:
+          type: number
+          format: float # For PERCENTAGE, this is %, for FIXED_AMOUNT, this is currency value
+          example: 10.00
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [DRAFT, ACTIVE, PAUSED, EXPIRED]
+          example: "ACTIVE"
+        conditions:
+          type: object
+          additionalProperties: true
+          nullable: true
+          example: {"minOrderValue": 50, "applicableCategoryIds": ["uuid"]}
+        metadata:
+          type: object
+          additionalProperties: true
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+
+    DiscountCreateRequest:
+      type: object
+      required:
+        - name
+        - type
+        - value
+        - startDate
+        - endDate
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 1000
+          nullable: true
+        type:
+          type: string
+          enum: [PERCENTAGE, FIXED_AMOUNT, FREE_SHIPPING, BUY_X_GET_Y]
+        value:
+          type: number
+          format: float
+          minimum: 0 # For PERCENTAGE, can be 0, for FIXED_AMOUNT must be >0 based on type logic
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [DRAFT, ACTIVE, PAUSED, EXPIRED]
+          default: "DRAFT"
+        conditions:
+          type: object
+          additionalProperties: true
+          nullable: true
+        metadata:
+          type: object
+          additionalProperties: true
+          nullable: true
+
+    DiscountUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        description:
+          type: string
+          maxLength: 1000
+          nullable: true
+        type:
+          type: string
+          enum: [PERCENTAGE, FIXED_AMOUNT, FREE_SHIPPING, BUY_X_GET_Y]
+        value:
+          type: number
+          format: float
+        startDate:
+          type: string
+          format: date-time
+        endDate:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [DRAFT, ACTIVE, PAUSED, EXPIRED]
+        conditions:
+          type: object
+          additionalProperties: true
+          nullable: true
+        metadata:
+          type: object
+          additionalProperties: true
+          nullable: true
+
+    DiscountListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Discount'
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+
+    ApplyDiscountRequest:
+      type: object
+      required:
+        - discountId
+      properties:
+        discountId:
+          type: string
+          format: uuid
+        priority:
+          type: integer
+          default: 0
+          description: Priority for applying this discount if multiple are applicable.
+
+    IdPathParam:
+      name: id
+      in: path
+      required: true
+      description: ID of the resource
+      schema:
+        type: string
+        format: uuid
+    ProductVariantIdPathParam: # Specific parameter for product variants
+      name: productVariantId
+      in: path
+      required: true
+      description: ID of the product variant
+      schema:
+        type: string
+        # format: uuid (if variants use UUIDs, otherwise string or int based on actual ID type)
+    DiscountIdPathParam:
+      name: discountId
+      in: path
+      required: true
+      description: ID of the discount
+      schema:
+        type: string
+        format: uuid
+    PageQueryParam:
+      name: page
+      in: query
+      description: Page number for pagination
+      schema:
+        type: integer
+        default: 1
+        minimum: 1
+    LimitQueryParam:
+      name: limit
+      in: query
+      description: Number of items per page
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 100 # Example max limit
+    SortQueryParam:
+      name: sort
+      in: query
+      description: Sort order (e.g., name:asc, createdAt:desc)
+      schema:
+        type: string
+
+  responses:
+    BadRequest:
+      description: Bad Request - typically a validation error.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Unauthorized - Authentication is required and has failed or has not yet been provided.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Forbidden - The server understood the request but refuses to authorize it.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Not Found - The requested resource could not be found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Conflict:
+      description: Conflict - The request could not be completed due to a conflict with the current state of the resource.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalServerError:
+      description: Internal Server Error - An unexpected condition was encountered on the server.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - bearerAuth: [] # Applies to all operations by default, can be overridden

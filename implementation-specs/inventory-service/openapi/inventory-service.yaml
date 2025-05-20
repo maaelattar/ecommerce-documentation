@@ -1,0 +1,94 @@
+openapi: 3.0.3
+info:
+  title: Inventory Service API
+  version: 1.0.0
+  description: API for managing stock levels, reservations, and inventory movements.
+servers:
+  - url: http://localhost:3002/api/v1 # Assuming a different port for Inventory Service
+    description: Local development server
+  - url: https://api.example.com/inventory-service/v1
+    description: Production server
+tags:
+  - name: Inventory
+    description: Inventory and stock management
+paths:
+  # Paths will be defined here, e.g., /inventory/{productVariantId}, /inventory/adjustments, /inventory/reservations
+
+components:
+  schemas:
+    # Schemas like InventoryItem, StockAdjustmentRequest, ReservationRequest will be defined here
+    ErrorResponse: # Reusing a common error structure, can be defined here or referenced if centralized
+      type: object
+      required:
+        - error
+        - message
+        - statusCode
+      properties:
+        error:
+          type: string
+          example: "ValidationError"
+        message:
+          type: string
+          example: "Input validation failed"
+        statusCode:
+          type: integer
+          example: 400
+        details:
+          type: object
+          additionalProperties: true
+          example: {"field_name": "Error description"}
+        correlationId:
+          type: string
+          format: uuid
+          example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
+
+  parameters: # Reusable parameters
+    ProductVariantIdPathParam:
+      name: productVariantId
+      in: path
+      required: true
+      description: ID of the product variant
+      schema:
+        type: string
+        # format: uuid (if variants also use UUIDs)
+
+  responses: # Reusable responses
+    BadRequest:
+      description: Bad Request - typically a validation error.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Unauthorized - Authentication is required and has failed or has not yet been provided.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Forbidden:
+      description: Forbidden - The server understood the request but refuses to authorize it.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Not Found - The requested resource could not be found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    InternalServerError:
+      description: Internal Server Error - An unexpected condition was encountered on the server.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  securitySchemes:
+    bearerAuth: # Assuming JWT Bearer token, adjust if different
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+security:
+  - bearerAuth: [] # Applies to all operations by default, can be overridden 
