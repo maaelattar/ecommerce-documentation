@@ -29,7 +29,7 @@ The Product Service will publish events related to the lifecycle and significant
 
 ## 4. Event Publishing Mechanism
 
-- **Chosen Technology:** *[To be specified - e.g., Apache Kafka, RabbitMQ, AWS SNS/SQS, Google Pub/Sub. This should align with ADR-002: Event-Driven Architecture and potentially a more specific ADR for event bus selection, e.g., ADR-015: Event Bus Technology Choice.]*
+- **Chosen Technology:** RabbitMQ (via Amazon MQ for RabbitMQ), leveraging the `@ecommerce-platform/rabbitmq-event-utils` shared library. This aligns with ADR-018: Message Broker Strategy and TDAC/03: Message Broker Selection.
 - **Key Considerations:**
   - **Reliability:** Guaranteed delivery, at-least-once processing.
   - **Scalability:** Ability to handle a high volume of events.
@@ -40,22 +40,24 @@ The Product Service will publish events related to the lifecycle and significant
 
 ## 5. General Event Structure
 
-All events published by the Product Service should follow a consistent structure:
+All events published by the Product Service should follow the `StandardMessage<T>` structure defined in the `@ecommerce-platform/rabbitmq-event-utils` library:
 
 ```json
 {
-  "eventId": "uuid",          // Unique ID for this specific event instance
-  "eventType": "string",      // e.g., "ProductCreated", "CategoryUpdated"
-  "eventVersion": "string",   // e.g., "1.0"
+  "messageId": "uuid",          // Unique ID for this specific event instance (formerly eventId)
+  "messageType": "string",      // e.g., "ProductCreated", "CategoryUpdated" (formerly eventType)
+  "messageVersion": "string",   // e.g., "1.0" (formerly eventVersion)
   "timestamp": "ISO8601",   // Timestamp of when the event occurred (source system time)
-  "sourceService": "ProductService",
+  "source": "ProductService",   // Name of the publishing service (formerly sourceService)
   "correlationId": "uuid",    // ID to correlate related operations/requests across services
-  "entityId": "string",       // ID of the primary entity this event pertains to (e.g., productId, categoryId)
+  "partitionKey": "string",     // Optional: Key for partitioning/routing (e.g., productId, categoryId, tenantId)
   "payload": {
-    // Event-specific data
+    // Event-specific data (T)
   }
 }
 ```
+
+Note the alignment with `StandardMessage<T>`: `messageId`, `messageType`, `messageVersion`, and `source`. `partitionKey` is used for routing in RabbitMQ, analogous to `entityId`'s previous intent or Kafka's message key.
 
 ## 6. Eventual Consistency
 

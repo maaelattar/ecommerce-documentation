@@ -1,0 +1,173 @@
+openapi: 3.0.0
+info:
+  title: Notification Service API
+  version: v1.0.0
+  description: |
+    API for the E-Commerce Notification Service.
+    Primarily for administrative tasks and receiving callbacks from notification providers.
+    Internal service-to-service communication is predominantly event-driven.
+
+servers:
+  - url: http://localhost:300X # Port to be determined for Notification Service
+    description: Local development server
+  - url: https://api.ecommerce.example.com/notification # Replace with actual prod URL
+    description: Production server
+
+components:
+  securitySchemes:
+    bearerAuth: # Internal services and admin users
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        statusCode: 
+          type: integer
+        message: 
+          type: string
+        error: 
+          type: string
+        timestamp: 
+          type: string
+          format: date-time
+        path: 
+          type: string
+
+    TestNotificationRequest:
+      type: object
+      required:
+        - channel
+        - recipient
+        - templateId
+      properties:
+        channel:
+          type: string
+          enum: [EMAIL, SMS, PUSH]
+        recipient:
+          type: string
+          description: "Email address, phone number, or device token depending on channel"
+        templateId:
+          type: string
+          description: "ID or name of the template to use"
+        context:
+          type: object
+          additionalProperties: true
+          description: "Key-value pairs for template personalization"
+
+    NotificationLog:
+      type: object
+      properties:
+        logId:
+          type: string
+          format: uuid
+        notificationId:
+          type: string
+          format: uuid
+        channel:
+          type: string
+          enum: [EMAIL, SMS, PUSH, WEBHOOK]
+        recipient:
+          type: string
+        templateId:
+          type: string
+        status:
+          type: string
+          enum: [PENDING, SENT_TO_PROVIDER, DELIVERED, FAILED, BOUNCED, OPENED, CLICKED] # Example statuses
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        providerMessageId:
+          type: string
+        errorDetails:
+          type: string
+        # ... other relevant log fields
+
+    PaginatedNotificationLogs:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/NotificationLog'
+        meta:
+          type: object
+          properties:
+            totalItems: 
+              type: integer
+            itemCount: 
+              type: integer
+            itemsPerPage: 
+              type: integer
+            totalPages: 
+              type: integer
+            currentPage: 
+              type: integer
+
+# Paths will be defined here as needed. Example for test notification:
+paths:
+  /admin/notifications/send-test:
+    post:
+      summary: Send a Test Notification
+      tags:
+        - Admin
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TestNotificationRequest'
+      responses:
+        '202':
+          description: Test notification request accepted for processing.
+        '400':
+          description: Bad Request - Invalid input parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized - Missing or invalid authentication token.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Insufficient permissions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Placeholder for AWS SES Callback
+  /callbacks/email/aws-ses:
+    post:
+      summary: AWS SES Email Callback Handler
+      tags:
+        - Callbacks
+      description: |
+        Receives notifications from AWS SES (via SNS) about email delivery, bounces, complaints.
+        Request body format is defined by AWS SNS and SES.
+        Security: Requires AWS SNS topic subscription confirmation and potentially message signature verification.
+      requestBody:
+        description: Payload from AWS SNS.
+        required: true
+        content:
+          application/json: # Or text/plain depending on SNS configuration
+            schema:
+              type: object # Structure defined by AWS
+      responses:
+        '200':
+          description: Callback received and acknowledged.
+        '400':
+          description: Invalid callback format or signature.
+
+  # Add other paths for /admin/notifications/logs, /admin/templates, etc.
+  # Add paths for other provider callbacks like Twilio.

@@ -1,0 +1,6 @@
+---
+description: 
+globs: *.md,*.ts
+alwaysApply: false
+---
+Always check quality standrds files at /Users/mh/Documents/Wave/demo/ecommerce-repos-gemi/ecommerce-documentation/architecture/quality-standards to check what you are doing is matching our agreed quality standards

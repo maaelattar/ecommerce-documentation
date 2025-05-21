@@ -1,542 +1,542 @@
 openapi: 3.0.3
 info:
   title: Inventory Service API
+  description: API for managing inventory, allocations, and warehouses
   version: 1.0.0
-  description: API for managing product variant inventory, including stock levels, reservations, releases, and history tracking. This service is crucial for real-time stock management across the e-commerce platform.
 servers:
-  - url: http://localhost:3005/api/v1
-    description: Local development server for Inventory Service
-  - url: https://api.example.com/inventory/v1
-    description: Production server for Inventory Service
-tags:
-  - name: Inventory
-    description: Operations related to product inventory management.
-
-paths:
-  /inventory/{productVariantId}:
-    get:
-      tags:
-        - Inventory
-      summary: Retrieve inventory details for a specific product variant.
-      operationId: getInventoryByProductVariantId
-      parameters:
-        - $ref: '#/components/parameters/ProductVariantIdPathParam'
-      responses:
-        '200':
-          description: Successfully retrieved inventory details.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InventoryItem'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-      security:
-        - bearerAuth: []
-    patch:
-      tags:
-        - Inventory
-      summary: Update stock quantity for a product variant.
-      description: Allows for direct adjustments to stock levels (e.g., receiving new stock, manual corrections, or recording sales/returns not managed by reservation flow).
-      operationId: updateStock
-      parameters:
-        - $ref: '#/components/parameters/ProductVariantIdPathParam'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/StockUpdateRequest'
-      responses:
-        '200':
-          description: Successfully updated stock quantity.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InventoryItem'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-      security:
-        - bearerAuth: []
-
-  /inventory/{productVariantId}/reserve:
-    post:
-      tags:
-        - Inventory
-      summary: Reserve a quantity of stock for a product variant.
-      operationId: reserveStock
-      parameters:
-        - $ref: '#/components/parameters/ProductVariantIdPathParam'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/StockReservationRequest'
-      responses:
-        '200':
-          description: Successfully reserved stock.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InventoryItem'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-      security:
-        - bearerAuth: []
-
-  /inventory/{productVariantId}/release:
-    post:
-      tags:
-        - Inventory
-      summary: Release a previously reserved quantity of stock.
-      operationId: releaseStock
-      parameters:
-        - $ref: '#/components/parameters/ProductVariantIdPathParam'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/StockReleaseRequest'
-      responses:
-        '200':
-          description: Successfully released stock.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InventoryItem'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '409':
-          $ref: '#/components/responses/Conflict'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-      security:
-        - bearerAuth: []
-
-  /inventory/{productVariantId}/history:
-    get:
-      tags:
-        - Inventory
-      summary: Retrieve inventory change history for a product variant.
-      operationId: getInventoryHistory
-      parameters:
-        - $ref: '#/components/parameters/ProductVariantIdPathParam'
-        - name: from
-          in: query
-          description: Start date-time for filtering history records (ISO 8601 format).
-          required: false
-          schema:
-            type: string
-            format: date-time
-        - name: to
-          in: query
-          description: End date-time for filtering history records (ISO 8601 format).
-          required: false
-          schema:
-            type: string
-            format: date-time
-        - name: changeType
-          in: query
-          description: Filter by type of inventory change.
-          required: false
-          schema:
-            $ref: '#/components/schemas/InventoryChangeType'
-        - name: userId
-          in: query
-          description: Filter by ID of the user or service that initiated the change.
-          required: false
-          schema:
-            type: string
-            format: uuid
-        - name: page
-          in: query
-          description: Page number for pagination.
-          required: false
-          schema:
-            type: integer
-            default: 1
-            minimum: 1
-        - name: limit
-          in: query
-          description: Number of items per page.
-          required: false
-          schema:
-            type: integer
-            default: 20
-            minimum: 1
-            maximum: 100
-      responses:
-        '200':
-          description: Successfully retrieved inventory history.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedInventoryHistoryResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-      security:
-        - bearerAuth: []
+  - url: 'https://api.example.com/inventory/v1'
+    description: Production server
+  - url: 'https://staging-api.example.com/inventory/v1'
+    description: Staging server
+  - url: 'https://dev-api.example.com/inventory/v1'
+    description: Development server
 
 components:
-  schemas:
-    InventoryStatus:
-      type: string
-      enum:
-        - in_stock
-        - low_stock
-        - out_of_stock
-        - discontinued
-      description: Current status of the inventory item.
-      example: in_stock
-
-    InventoryChangeType:
-      type: string
-      enum:
-        - purchase
-        - sale
-        - return
-        - adjustment
-        - reservation
-        - cancellation
-      description: Type of inventory change event.
-      example: purchase
-
-    InventoryItem:
-      type: object
-      description: Represents the inventory details for a product variant.
-      properties:
-        id:
-          type: string
-          format: uuid
-          description: Unique identifier for the inventory record.
-          example: "d290f1ee-6c54-4b01-90e6-d701748f0851"
-          readOnly: true
-        productVariantId:
-          type: string
-          format: uuid
-          description: Identifier of the product variant this inventory belongs to.
-          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
-        quantity:
-          type: integer
-          format: int32
-          description: Total physical quantity of the item in stock.
-          example: 100
-        reservedQuantity:
-          type: integer
-          format: int32
-          description: Quantity of the item currently reserved for orders.
-          example: 10
-        availableQuantity:
-          type: integer
-          format: int32
-          description: Quantity available for sale/reservation (calculated as quantity - reservedQuantity).
-          readOnly: true
-          example: 90
-        status:
-          $ref: '#/components/schemas/InventoryStatus'
-        metadata:
-          type: object
-          additionalProperties: true
-          description: Optional metadata for the inventory item (e.g., warehouse location, supplier info, low_stock_threshold).
-          example: {"warehouse_location": "Aisle 5, Bay 3", "low_stock_threshold": 20}
-          nullable: true
-        createdAt:
-          type: string
-          format: date-time
-          description: Timestamp when the inventory record was created.
-          readOnly: true
-          example: "2023-01-15T10:00:00Z"
-        updatedAt:
-          type: string
-          format: date-time
-          description: Timestamp when the inventory record was last updated.
-          readOnly: true
-          example: "2023-01-16T14:30:00Z"
-      required:
-        - id
-        - productVariantId
-        - quantity
-        - reservedQuantity
-        - availableQuantity
-        - status
-        - createdAt
-        - updatedAt
-
-    InventoryHistoryEntry:
-      type: object
-      description: Represents a single entry in the inventory change history.
-      properties:
-        id:
-          type: string
-          format: uuid
-          description: Unique identifier for the history entry.
-          example: "c1a2b3d4-e5f6-7890-1234-567890abcdef"
-          readOnly: true
-        inventoryId:
-          type: string
-          format: uuid
-          description: Identifier of the inventory record this history entry pertains to.
-          example: "d290f1ee-6c54-4b01-90e6-d701748f0851"
-        productVariantId:
-          type: string
-          format: uuid
-          description: Identifier of the product variant.
-          example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
-        previousQuantity:
-          type: integer
-          format: int32
-          description: Stock quantity before the change. This refers to the physical `quantity` field.
-          example: 50
-        newQuantity:
-          type: integer
-          format: int32
-          description: Stock quantity after the change. This refers to the physical `quantity` field.
-          example: 60
-        quantityChange:
-          type: integer
-          format: int32
-          description: The amount by which the physical `quantity` changed.
-          example: 10
-        changeType:
-          $ref: '#/components/schemas/InventoryChangeType'
-        changeReason:
-          type: string
-          nullable: true
-          description: Reason for the inventory change (e.g., order ID, adjustment note).
-          example: "Received new shipment from supplier X."
-        changedBy:
-          type: string
-          format: uuid
-          description: Identifier of the user or service that initiated the change.
-          example: "user-abc-123"
-        createdAt:
-          type: string
-          format: date-time
-          description: Timestamp when the history entry was recorded.
-          readOnly: true
-          example: "2023-01-17T09:15:00Z"
-      required:
-        - id
-        - inventoryId
-        - productVariantId
-        - previousQuantity
-        - newQuantity
-        - quantityChange
-        - changeType
-        - changedBy
-        - createdAt
-
-    StockUpdateRequest:
-      type: object
-      description: Request body for updating stock quantity.
-      properties:
-        quantityChange:
-          type: integer
-          format: int32
-          description: The amount to change the physical quantity by (positive for increase, negative for decrease).
-          example: 10
-        changeType:
-          $ref: '#/components/schemas/InventoryChangeType'
-        reason:
-          type: string
-          description: Reason for the stock update.
-          example: "Manual stock correction after audit."
-        userId:
-          type: string
-          format: uuid
-          description: ID of the user or system initiating the change (if not inferred from auth context).
-          nullable: true
-          example: "user-internal-ops-001"
-      required:
-        - quantityChange
-        - changeType
-        - reason
-
-    StockReservationRequest:
-      type: object
-      description: Request body for reserving stock.
-      properties:
-        quantity:
-          type: integer
-          format: int32
-          description: Quantity of stock to reserve.
-          minimum: 1
-          example: 2
-        userId:
-          type: string
-          format: uuid
-          description: ID of the user or system (e.g., Order Service client ID) making the reservation (if not inferred from auth context).
-          nullable: true
-          example: "order-service-client-id"
-      required:
-        - quantity
-
-    StockReleaseRequest:
-      type: object
-      description: Request body for releasing previously reserved stock.
-      properties:
-        quantity:
-          type: integer
-          format: int32
-          description: Quantity of stock to release.
-          minimum: 1
-          example: 2
-        userId:
-          type: string
-          format: uuid
-          description: ID of the user or system (e.g., Order Service client ID) releasing the stock (if not inferred from auth context).
-          nullable: true
-          example: "order-service-client-id"
-      required:
-        - quantity
-
-    PaginatedInventoryHistoryResponse:
-      type: object
-      description: Response containing a paginated list of inventory history entries.
-      properties:
-        items:
-          type: array
-          items:
-            $ref: '#/components/schemas/InventoryHistoryEntry'
-        total:
-          type: integer
-          format: int32
-          description: Total number of history entries matching the query.
-          example: 100
-        page:
-          type: integer
-          format: int32
-          description: Current page number.
-          example: 1
-        limit:
-          type: integer
-          format: int32
-          description: Number of items per page.
-          example: 20
-      required:
-        - items
-        - total
-        - page
-        - limit
-
-    ErrorResponse:
-      type: object
-      description: Standard error response structure.
-      required:
-        - error
-        - message
-        - statusCode
-      properties:
-        error:
-          type: string
-          description: A short error code or type.
-          example: "ValidationError"
-        message:
-          type: string
-          description: A human-readable message explaining the error.
-          example: "Input validation failed for one or more fields."
-        statusCode:
-          type: integer
-          description: HTTP status code.
-          example: 400
-        details:
-          type: array
-          items:
-            type: object
-            properties:
-              field:
-                type: string
-                description: Name of the field that caused the validation error.
-                nullable: true
-              message:
-                type: string
-                description: Specific error message for the field.
-            required:
-              - message
-            example: [{"field": "quantity", "message": "Quantity must be a positive integer."}]
-          nullable: true
-          description: Optional array of detailed error messages, typically for validation errors.
-        correlationId:
-          type: string
-          format: uuid
-          description: ID for tracking the request across services.
-          example: "a1b2c3d4-e5f6-7890-1234-567890abcdef"
-          readOnly: true
-
-  parameters:
-    ProductVariantIdPathParam:
-      name: productVariantId
-      in: path
-      required: true
-      description: Unique identifier of the product variant for which inventory is managed.
-      schema:
-        type: string
-        format: uuid
-        example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
-
-  responses:
-    BadRequest:
-      description: Bad Request - Typically a validation error or invalid input (e.g., negative quantity, invalid enum value).
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    Unauthorized:
-      description: Unauthorized - Authentication is required and has failed or has not yet been provided.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    Forbidden:
-      description: Forbidden - The authenticated user/service does not have permission to perform this action.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    NotFound:
-      description: Not Found - The requested resource (e.g., product variant inventory) could not be found.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    Conflict:
-      description: Conflict - The request could not be completed due to a conflict with the current state of the resource. This can occur for reasons like insufficient stock for a reservation, an attempt to release more stock than reserved, or optimistic locking failures.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-    InternalServerError:
-      description: Internal Server Error - An unexpected condition was encountered on the server.
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ErrorResponse'
-
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: JWT Bearer token for authentication. Ensures that the client is authenticated.
+
+  schemas:
+    InventoryItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        sku:
+          type: string
+        productId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        quantityAvailable:
+          type: integer
+          minimum: 0
+        quantityReserved:
+          type: integer
+          minimum: 0
+        quantityOnOrder:
+          type: integer
+          minimum: 0
+        reorderThreshold:
+          type: integer
+          minimum: 0
+        targetStockLevel:
+          type: integer
+          minimum: 0
+        active:
+          type: boolean
+        warehouseId:
+          type: string
+          format: uuid
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        location:
+          type: string
+          nullable: true
+        barcode:
+          type: string
+          nullable: true
+        metadata:
+          type: object
+          additionalProperties: true
+          nullable: true
+      required:
+        - id
+        - sku
+        - productId
+        - name
+        - quantityAvailable
+        - quantityReserved
+        - warehouseId
+
+    CreateInventoryItemRequest:
+      type: object
+      properties:
+        sku:
+          type: string
+        productId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        warehouseId:
+          type: string
+          format: uuid
+        initialQuantity:
+          type: integer
+          minimum: 0
+        reorderThreshold:
+          type: integer
+          minimum: 0
+        targetStockLevel:
+          type: integer
+          minimum: 0
+        location:
+          type: string
+          nullable: true
+        barcode:
+          type: string
+          nullable: true
+        metadata:
+          type: object
+          additionalProperties: true
+          nullable: true
+      required:
+        - sku
+        - productId
+        - name
+        - warehouseId
+        - reorderThreshold
+        - targetStockLevel
+
+    InventoryAllocation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        orderId:
+          type: string
+        orderItemId:
+          type: string
+        inventoryItemId:
+          type: string
+          format: uuid
+        warehouseId:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+          minimum: 1
+        status:
+          type: string
+          enum: [PENDING, CONFIRMED, CANCELLED, FULFILLED]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+      required:
+        - id
+        - orderId
+        - orderItemId
+        - inventoryItemId
+        - warehouseId
+        - quantity
+        - status
+        - createdAt
+
+    CreateAllocationRequest:
+      type: object
+      properties:
+        orderId:
+          type: string
+        orderItemId:
+          type: string
+        inventoryItemId:
+          type: string
+          format: uuid
+        quantity:
+          type: integer
+          minimum: 1
+        warehouseId:
+          type: string
+          format: uuid
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        metadata:
+          type: object
+          additionalProperties: true
+          nullable: true
+      required:
+        - orderId
+        - orderItemId
+        - inventoryItemId
+        - quantity
+
+    Warehouse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        addressLine1:
+          type: string
+        addressLine2:
+          type: string
+          nullable: true
+        city:
+          type: string
+        state:
+          type: string
+        postalCode:
+          type: string
+        country:
+          type: string
+        latitude:
+          type: number
+          format: float
+          nullable: true
+        longitude:
+          type: number
+          format: float
+          nullable: true
+        active:
+          type: boolean
+        maxCapacity:
+          type: integer
+          nullable: true
+        timeZone:
+          type: string
+          nullable: true
+        isPrimary:
+          type: boolean
+        isVirtual:
+          type: boolean
+        contactEmail:
+          type: string
+          nullable: true
+        contactPhone:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        operatingHours:
+          type: object
+          additionalProperties: true
+          nullable: true
+        metadata:
+          type: object
+          additionalProperties: true
+          nullable: true
+      required:
+        - id
+        - code
+        - name
+        - addressLine1
+        - city
+        - state
+        - postalCode
+        - country
+        - active
+
+    StockTransaction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        inventoryItemId:
+          type: string
+          format: uuid
+        warehouseId:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [RECEIPT, ADJUSTMENT, TRANSFER_IN, TRANSFER_OUT, SALE, RETURN, DAMAGE, RESERVATION, RELEASE, CYCLE_COUNT]
+        quantity:
+          type: integer
+        referenceNumber:
+          type: string
+          nullable: true
+        referenceType:
+          type: string
+          nullable: true
+        relatedTransactionId:
+          type: string
+          format: uuid
+          nullable: true
+        reason:
+          type: string
+          nullable: true
+        createdBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        sourceWarehouseId:
+          type: string
+          format: uuid
+          nullable: true
+        destinationWarehouseId:
+          type: string
+          format: uuid
+          nullable: true
+        metadata:
+          type: object
+          additionalProperties: true
+          nullable: true
+      required:
+        - id
+        - inventoryItemId
+        - warehouseId
+        - type
+        - quantity
+        - createdBy
+        - createdAt
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+              additionalProperties: true
+          required:
+            - code
+            - message
+      required:
+        - success
+        - error
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          additionalProperties: true
+        meta:
+          type: object
+          properties:
+            page:
+              type: integer
+            limit:
+              type: integer
+            totalItems:
+              type: integer
+            totalPages:
+              type: integer
+      required:
+        - success
 
 security:
   - bearerAuth: []
+
+paths:
+  /inventory-items:
+    get:
+      summary: List inventory items
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: sku
+          in: query
+          schema:
+            type: string
+        - name: productId
+          in: query
+          schema:
+            type: string
+        - name: warehouseId
+          in: query
+          schema:
+            type: string
+        - name: active
+          in: query
+          schema:
+            type: boolean
+        - name: lowStock
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/InventoryItem'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      summary: Create inventory item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateInventoryItemRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/InventoryItem'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /allocations:
+    post:
+      summary: Create allocation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateAllocationRequest'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/InventoryAllocation'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict - insufficient inventory
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /warehouses:
+    get:
+      summary: List warehouses
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: active
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Warehouse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'

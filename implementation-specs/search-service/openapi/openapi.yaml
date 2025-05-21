@@ -1,0 +1,271 @@
+openapi: 3.0.0
+info:
+  title: Search Service API
+  version: v1.0.0
+  description: |
+    API for the E-Commerce Search Service.
+    Provides product search, suggestions, and faceted navigation.
+
+servers:
+  - url: http://localhost:300Y # Port to be determined for Search Service
+    description: Local development server
+  - url: https://api.ecommerce.example.com/search # Replace with actual prod URL
+    description: Production server
+
+components:
+  securitySchemes:
+    bearerAuth: # For Admin APIs
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        statusCode:
+          type: integer
+        message:
+          type: string
+        error:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        path:
+          type: string
+
+    ProductSearchDocument: # Simplified, refer to 03-data-model-and-indexing.md
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        product_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description_short:
+          type: string
+        price_current:
+          type: number
+          format: float
+        currency:
+          type: string
+        brand_name:
+          type: string
+        category_names:
+          type: array
+          items:
+            type: string
+        image_url_main:
+          type: string
+        average_rating:
+          type: number
+          format: float
+        stock_status:
+          type: string
+        # ... other fields as defined in the search index document structure
+
+    FacetValue:
+      type: object
+      properties:
+        value:
+          type: string # Or number, depending on facet
+        count:
+          type: integer
+        # For hierarchical facets like categories:
+        id:
+          type: string
+        name:
+          type: string 
+        parent_id:
+          type: string
+
+    Facets:
+      type: object
+      additionalProperties:
+        type: array
+        items:
+          $ref: '#/components/schemas/FacetValue'
+      example:
+        brand_name:
+          - value: "BrandA"
+            count: 120
+        color:
+          - value: "Red"
+            count: 50
+
+    SearchResponseMeta:
+      type: object
+      properties:
+        query:
+          type: string
+          nullable: true
+        total_results:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+        total_pages:
+          type: integer
+        sort_by:
+          type: string
+
+    ProductSearchResponse:
+      type: object
+      properties:
+        meta:
+          $ref: '#/components/schemas/SearchResponseMeta'
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductSearchDocument'
+        facets:
+          $ref: '#/components/schemas/Facets'
+          nullable: true
+
+    Suggestion:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [product, category, brand, query, attribute]
+        value:
+          type: string
+        highlight:
+          type: string # Value with matched part highlighted (e.g., using <strong>)
+        id:
+          type: string # Optional: ID of the product/category/brand if applicable
+          nullable: true
+
+    SuggestResponse:
+      type: object
+      properties:
+        query:
+          type: string
+        suggestions:
+          type: array
+          items:
+            $ref: '#/components/schemas/Suggestion'
+
+paths:
+  /v1/search/products:
+    get:
+      summary: Search for products
+      tags:
+        - Product Search
+      parameters:
+        - name: q
+          in: query
+          description: Search query keywords
+          schema:
+            type: string
+        - name: category
+          in: query
+          description: Category ID or slug
+          schema:
+            type: string
+        - name: brand
+          in: query
+          description: Brand name or ID
+          schema:
+            type: string
+        - name: price_min
+          in: query
+          description: Minimum price
+          schema:
+            type: number
+            format: float
+        - name: price_max
+          in: query
+          description: Maximum price
+          schema:
+            type: number
+            format: float
+        # Add other filter parameters like attributes, rating_min
+        - name: sort_by
+          in: query
+          description: Sort order (e.g., relevance, price_asc, price_desc)
+          schema:
+            type: string
+            default: relevance
+        - name: page
+          in: query
+          description: Page number
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          description: Results per page
+          schema:
+            type: integer
+            default: 20
+        - name: include_facets
+          in: query
+          description: Whether to include facet counts
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: Successful product search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductSearchResponse'
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/search/suggest:
+    get:
+      summary: Get search suggestions (typeahead)
+      tags:
+        - Product Search
+      parameters:
+        - name: q
+          in: query
+          required: true
+          description: Partial search query
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Max number of suggestions
+          schema:
+            type: integer
+            default: 10
+        - name: include_types
+          in: query
+          description: Comma-separated list of suggestion types (e.g., products,categories)
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful suggestions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuggestResponse'
+        '400':
+          description: Missing or invalid query parameter 'q'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Admin endpoints like /v1/admin/index/rebuild would be defined here
+  # with appropriate security (bearerAuth)

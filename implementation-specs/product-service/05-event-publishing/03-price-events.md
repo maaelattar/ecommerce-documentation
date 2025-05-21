@@ -4,17 +4,17 @@
 
 This document details the domain events published by the Product Service related to product prices and discounts.
 
-All events follow the [General Event Structure defined in the Event Publishing Overview](../05-event-publishing/00-overview.md#5-general-event-structure).
+All events follow the `StandardMessage<T>` structure as detailed in the [Event Publishing Overview](./00-overview.md#5-general-event-structure), using RabbitMQ as the message broker.
 
 ## 2. Price Events
 
 ### 2.1. `ProductPriceUpdated`
 
-- **`eventType`**: `ProductPriceUpdated`
-- **`eventVersion`**: `1.0`
+- **`messageType`**: `ProductPriceUpdated`
+- **`messageVersion`**: `1.0`
 - **Description**: Published when the price of a product variant is updated (e.g., base price, sale price).
 - **Trigger**: Successful completion of `updatePrice` or similar methods in `PriceDiscountService`.
-- **`entityId`**: The `productVariantId` for which the price was updated. (Note: Can also include `productId` for easier context if needed by consumers).
+- **`partitionKey`**: The `productVariantId` for which the price was updated. (Note: The payload can also include `productId` for easier context if needed by consumers).
 - **Payload Schema**:
   ```json
   {
@@ -42,11 +42,11 @@ All events follow the [General Event Structure defined in the Event Publishing O
 
 ### 3.1. `DiscountCreated`
 
-- **`eventType`**: `DiscountCreated`
-- **`eventVersion`**: `1.0`
+- **`messageType`**: `DiscountCreated`
+- **`messageVersion`**: `1.0`
 - **Description**: Published when a new discount rule or promotion is created.
 - **Trigger**: Successful completion of `createDiscount` in `PriceDiscountService`.
-- **`entityId`**: The `discountId` of the newly created discount.
+- **`partitionKey`**: The `discountId` of the newly created discount.
 - **Payload Schema**:
   ```json
   {
@@ -69,11 +69,11 @@ All events follow the [General Event Structure defined in the Event Publishing O
 
 ### 3.2. `DiscountUpdated`
 
-- **`eventType`**: `DiscountUpdated`
-- **`eventVersion`**: `1.0`
+- **`messageType`**: `DiscountUpdated`
+- **`messageVersion`**: `1.0`
 - **Description**: Published when an existing discount rule is updated.
 - **Trigger**: Successful completion of `updateDiscount`.
-- **`entityId`**: The `discountId`.
+- **`partitionKey`**: The `discountId`.
 - **Payload Schema**:
   ```json
   {
@@ -96,11 +96,11 @@ All events follow the [General Event Structure defined in the Event Publishing O
 
 ### 3.3. `DiscountDeleted`
 
-- **`eventType`**: `DiscountDeleted`
-- **`eventVersion`**: `1.0`
+- **`messageType`**: `DiscountDeleted`
+- **`messageVersion`**: `1.0`
 - **Description**: Published when a discount rule is deleted or deactivated.
 - **Trigger**: Successful completion of `deleteDiscount` or changing `isActive` to false.
-- **`entityId`**: The `discountId`.
+- **`partitionKey`**: The `discountId`.
 - **Payload Schema**:
   ```json
   {
@@ -113,11 +113,11 @@ All events follow the [General Event Structure defined in the Event Publishing O
 
 ### 3.4. `DiscountAppliedToProduct` (More Granular - Optional)
 
-- **`eventType`**: `DiscountAppliedToProduct`
-- **`eventVersion`**: `1.0`
+- **`messageType`**: `DiscountAppliedToProduct`
+- **`messageVersion`**: `1.0`
 - **Description**: Published when a specific discount is explicitly linked to a product or product variant (if the discount system supports direct assignment rather than only rule-based application).
 - **Trigger**: Successful linking of a discount to a product.
-- **`entityId`**: The `productVariantId` or `productId`.
+- **`partitionKey`**: The `productVariantId` or `productId`.
 - **Payload Schema**:
   ```json
   {
@@ -131,11 +131,11 @@ All events follow the [General Event Structure defined in the Event Publishing O
 
 ### 3.5. `DiscountRemovedFromProduct` (More Granular - Optional)
 
-- **`eventType`**: `DiscountRemovedFromProduct`
-- **`eventVersion`**: `1.0`
+- **`messageType`**: `DiscountRemovedFromProduct`
+- **`messageVersion`**: `1.0`
 - **Description**: Published when a specific discount is unlinked from a product/variant.
 - **Trigger**: Successful unlinking of a discount from a product.
-- **`entityId`**: The `productVariantId` or `productId`.
+- **`partitionKey`**: The `productVariantId` or `productId`.
 - **Payload Schema**:
   ```json
   {

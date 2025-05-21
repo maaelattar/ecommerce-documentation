@@ -4,17 +4,17 @@
 
 This document details the domain events published by the Product Service related to the lifecycle and state changes of Products and Product Variants.
 
-All events follow the [General Event Structure defined in the Event Publishing Overview](../05-event-publishing/00-overview.md#5-general-event-structure).
+All events follow the `StandardMessage<T>` structure as detailed in the [Event Publishing Overview](./00-overview.md#5-general-event-structure), using RabbitMQ as the message broker.
 
 ## 2. Product Events
 
 ### 2.1. `ProductCreated`
 
-- **`eventType`**: `ProductCreated`
-- **`eventVersion`**: `1.0`
+- **`messageType`**: `ProductCreated`
+- **`messageVersion`**: `1.0`
 - **Description**: Published when a new product (including its initial variant(s)) is successfully created in the Product Service.
 - **Trigger**: Successful completion of the `createProduct` method in `ProductService`.
-- **`entityId`**: The `productId` of the newly created product.
+- **`partitionKey`**: The `productId` of the newly created product.
 - **Payload Schema**:
   ```json
   {
@@ -60,11 +60,11 @@ All events follow the [General Event Structure defined in the Event Publishing O
 
 ### 2.2. `ProductUpdated`
 
-- **`eventType`**: `ProductUpdated`
-- **`eventVersion`**: `1.0`
+- **`messageType`**: `ProductUpdated`
+- **`messageVersion`**: `1.0`
 - **Description**: Published when significant attributes of an existing product or its variants are updated.
 - **Trigger**: Successful completion of methods like `updateProduct`, `updateProductVariant` in `ProductService`.
-- **`entityId`**: The `productId` of the updated product.
+- **`partitionKey`**: The `productId` of the updated product.
 - **Payload Schema**:
   ```json
   {
@@ -99,11 +99,11 @@ All events follow the [General Event Structure defined in the Event Publishing O
 
 ### 2.3. `ProductDeleted`
 
-- **`eventType`**: `ProductDeleted`
-- **`eventVersion`**: `1.0`
+- **`messageType`**: `ProductDeleted`
+- **`messageVersion`**: `1.0`
 - **Description**: Published when a product is successfully marked as deleted or archived (soft delete usually preferred).
 - **Trigger**: Successful completion of `deleteProduct` method.
-- **`entityId`**: The `productId` of the deleted product.
+- **`partitionKey`**: The `productId` of the deleted product.
 - **Payload Schema**:
   ```json
   {
@@ -117,11 +117,11 @@ All events follow the [General Event Structure defined in the Event Publishing O
 
 ### 2.4. `ProductStatusChanged`
 
-- **`eventType`**: `ProductStatusChanged`
-- **`eventVersion`**: `1.0`
+- **`messageType`**: `ProductStatusChanged`
+- **`messageVersion`**: `1.0`
 - **Description**: Published specifically when a product's primary status changes (e.g., Draft -> Active, Active -> Archived).
 - **Trigger**: Successful update of product status.
-- **`entityId`**: The `productId`.
+- **`partitionKey`**: The `productId`.
 - **Payload Schema**:
   ```json
   {
@@ -136,11 +136,11 @@ All events follow the [General Event Structure defined in the Event Publishing O
 
 ### 2.5. `ProductVariantAdded`
 
-- **`eventType`**: `ProductVariantAdded`
-- **`eventVersion`**: `1.0`
+- **`messageType`**: `ProductVariantAdded`
+- **`messageVersion`**: `1.0`
 - **Description**: Published when a new variant is added to an existing product.
 - **Trigger**: Successful completion of `addProductVariant`.
-- **`entityId`**: The `productId` to which the variant was added.
+- **`partitionKey`**: The `productId` to which the variant was added.
 - **Payload Schema**:
   ```json
   {
@@ -162,11 +162,11 @@ All events follow the [General Event Structure defined in the Event Publishing O
 
 ### 2.6. `ProductVariantUpdated`
 
-- **`eventType`**: `ProductVariantUpdated`
-- **`eventVersion`**: `1.0`
+- **`messageType`**: `ProductVariantUpdated`
+- **`messageVersion`**: `1.0`
 - **Description**: Published when attributes of a specific product variant are updated.
 - **Trigger**: Successful completion of `updateProductVariant`.
-- **`entityId`**: The `productId`.
+- **`partitionKey`**: The `productId`.
 - **Payload Schema**:
   ```json
   {
@@ -190,11 +190,11 @@ All events follow the [General Event Structure defined in the Event Publishing O
 
 ### 2.7. `ProductVariantRemoved`
 
-- **`eventType`**: `ProductVariantRemoved`
-- **`eventVersion`**: `1.0`
+- **`messageType`**: `ProductVariantRemoved`
+- **`messageVersion`**: `1.0`
 - **Description**: Published when a product variant is removed from a product.
 - **Trigger**: Successful completion of `removeProductVariant`.
-- **`entityId`**: The `productId`.
+- **`partitionKey`**: The `productId`.
 - **Payload Schema**:
   ```json
   {
@@ -210,7 +210,7 @@ All events follow the [General Event Structure defined in the Event Publishing O
 
 - **Granularity**: The `ProductUpdated` event can be broad. Depending on consumer needs, more granular events (e.g., `ProductInventoryDetailsUpdated` if Product Service were to cache/reflect some inventory summary) might be considered, but the current model defers inventory specifics to the Inventory Service.
 - **Payload Size**: Payloads should be comprehensive enough to be useful but not excessively large. For very large objects or frequent updates, consider publishing only key identifiers and a list of changed fields, requiring consumers to fetch details if needed (though this increases coupling).
-- **Event Sourcing**: These events are domain events, not necessarily events for full event sourcing of the Product entity itself within the Product Service. The Product Service will still maintain its own state in its database.
+- **Relationship to Event Sourcing**: The Product Service is implemented using an event sourcing pattern, where all state changes are first recorded as domain events in an internal event store (DynamoDB). The integration events detailed in this document (e.g., `ProductCreated`, `ProductUpdated`) are published to RabbitMQ for consumption by other services and are derived from, or directly correspond to, these internal domain events. The Product Service builds its queryable state (read models, likely in PostgreSQL) by projecting from its internal event stream.
 
 ## 4. References
 

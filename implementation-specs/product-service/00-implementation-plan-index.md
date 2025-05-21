@@ -73,16 +73,28 @@ We've broken down the implementation into distinct incremental phases, each of w
   - API consumption guidelines for justified synchronous calls
   - Exposing Product Service APIs to other services
 
-### Phase 7: Testing and CI/CD Setup
-- [Specification Document: 07-testing-cicd.md](./07-testing-cicd.md)
+
+
+### Phase 7: Event Sourcing Implementation
+- [Specification Document: 07-event-sourcing/00-overview.md](./07-event-sourcing/00-overview.md)
+- **Objective**: Implement event sourcing for the Product Service
+- **Key Deliverables**:
+  - Event store based on DynamoDB
+  - Domain events for all product state changes
+  - Command handlers and projections
+  - CQRS pattern implementation
+  - API integration with event sourcing
+
+### Phase 8: Testing and CI/CD Setup
+- [Specification Document: 08-testing-cicd.md](./08-testing-cicd.md) 
 - **Objective**: Establish comprehensive testing and automation
 - **Key Deliverables**:
   - Unit and integration tests
   - CI/CD pipeline configuration
   - Test data and scenarios
 
-### Phase 8: Production Readiness
-- [Specification Document: 08-production-readiness.md](./08-production-readiness.md)
+### Phase 9: Production Readiness
+- [Specification Document: 09-production-readiness.md](./09-production-readiness.md)
 - **Objective**: Finalize for production deployment
 - **Key Deliverables**:
   - Monitoring and logging setup
@@ -97,7 +109,8 @@ The implementation is guided by these key technical decisions from our documenta
 1. **Language and Framework**: Node.js with NestJS (as indicated in the C3 diagrams)
 2. **Database**:
    - Primary database: PostgreSQL via Amazon RDS
-   - Potential NoSQL for flexible attributes: Amazon DynamoDB
+   - Event Store: Amazon DynamoDB
+   - Projections: PostgreSQL via Amazon RDS
 3. **Messaging**: RabbitMQ via Amazon MQ for event publishing
 4. **API Gateway**: Amazon API Gateway for API exposure
 5. **Search**: Amazon OpenSearch Service for product indexing
@@ -105,6 +118,8 @@ The implementation is guided by these key technical decisions from our documenta
    - Event-Driven Architecture (as per ADR-002)
    - API-First Design (as per ADR-007)
    - Database-per-Service (as per ADR-020)
+   - Event Sourcing and CQRS (as per EDA Standards)
+   - Asynchronous Communication (as per EDA Standards)
 
 ## 4. Key External Resources
 
